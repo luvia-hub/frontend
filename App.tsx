@@ -1,31 +1,47 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, TouchableOpacity, Text, SafeAreaView, Modal } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { BarChart3, ArrowRightLeft } from 'lucide-react-native';
+import { BarChart3, ArrowRightLeft, TrendingUp } from 'lucide-react-native';
 import CryptoPortfolioDashboard from './components/CryptoPortfolioDashboard';
 import TradingInterface from './components/TradingInterface';
 import ConnectSourcesScreen from './components/ConnectSourcesScreen';
+import MarketListScreen from './components/MarketListScreen';
 
-type Tab = 'portfolio' | 'trade';
+type Tab = 'markets' | 'portfolio' | 'trade';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<Tab>('portfolio');
+  const [activeTab, setActiveTab] = useState<Tab>('markets');
   const [showConnectSources, setShowConnectSources] = useState(false);
+
+  const getHeaderTitle = () => {
+    switch (activeTab) {
+      case 'markets':
+        return 'Markets';
+      case 'portfolio':
+        return 'Portfolio';
+      case 'trade':
+        return 'Trade';
+      default:
+        return '';
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>
-          {activeTab === 'portfolio' ? 'Portfolio' : 'Trade'}
-        </Text>
-      </View>
+      {/* Header - Hide for Markets tab */}
+      {activeTab !== 'markets' && (
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>{getHeaderTitle()}</Text>
+        </View>
+      )}
 
       {/* Content */}
       <View style={styles.content}>
-        {activeTab === 'portfolio' ? (
+        {activeTab === 'markets' ? (
+          <MarketListScreen />
+        ) : activeTab === 'portfolio' ? (
           <CryptoPortfolioDashboard onConnectPress={() => setShowConnectSources(true)} />
         ) : (
           <TradingInterface />
@@ -44,6 +60,27 @@ export default function App() {
 
       {/* Bottom Tab Bar */}
       <View style={styles.tabBar}>
+        <TouchableOpacity
+          style={styles.tabItem}
+          onPress={() => setActiveTab('markets')}
+          accessibilityRole="tab"
+          accessibilityLabel="Markets tab"
+          accessibilityState={{ selected: activeTab === 'markets' }}
+        >
+          <TrendingUp
+            size={22}
+            color={activeTab === 'markets' ? '#FFFFFF' : '#6B7280'}
+          />
+          <Text
+            style={[
+              styles.tabLabel,
+              activeTab === 'markets' && styles.tabLabelActive,
+            ]}
+          >
+            Markets
+          </Text>
+        </TouchableOpacity>
+
         <TouchableOpacity
           style={styles.tabItem}
           onPress={() => setActiveTab('portfolio')}
