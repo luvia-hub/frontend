@@ -21,7 +21,8 @@ type TimeInterval = '15m' | '1h' | '4h' | '1d';
 // Constants
 const CURRENCY_LOCALE = 'en-US';
 const CURRENCY_FORMAT_OPTIONS = { minimumFractionDigits: 2, maximumFractionDigits: 2 };
-const SELL_PRICE_OFFSET = 1.5;
+// Bid-Ask spread for display purposes (simulated market depth)
+const BID_ASK_SPREAD = 1.5;
 
 export default function TradingInterface() {
   const [activeTab, setActiveTab] = useState<TabType>('orderBook');
@@ -250,8 +251,8 @@ export default function TradingInterface() {
         <View style={styles.orderBookContainer}>
           <View style={styles.orderBookHeader}>
             <Text style={styles.orderBookHeaderText}>Size (BTC)</Text>
-            <Text style={styles.orderBookHeaderText}>Price (USD)</Text>
-            <Text style={styles.orderBookHeaderText}>Price (USD)</Text>
+            <Text style={styles.orderBookHeaderText}>Bid Price</Text>
+            <Text style={styles.orderBookHeaderText}>Ask Price</Text>
             <Text style={styles.orderBookHeaderText}>Size (BTC)</Text>
           </View>
           <View style={styles.orderBookContent}>
@@ -429,7 +430,7 @@ export default function TradingInterface() {
         </TouchableOpacity>
         <TouchableOpacity style={styles.sellButton}>
           <Text style={styles.sellButtonText}>Short / Sell</Text>
-          <Text style={styles.buttonPrice}>{(markPrice - SELL_PRICE_OFFSET).toFixed(1)}</Text>
+          <Text style={styles.buttonPrice}>{(markPrice - BID_ASK_SPREAD).toFixed(1)}</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -850,12 +851,12 @@ const styles = StyleSheet.create({
   },
   buyButton: {
     flex: 1,
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#22C55E',
     borderRadius: 8,
     paddingVertical: 16,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#3B82F6',
+    borderColor: '#22C55E',
   },
   buyButtonText: {
     color: '#FFFFFF',
