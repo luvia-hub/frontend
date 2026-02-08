@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
-  Dimensions,
 } from 'react-native';
 import {
   ArrowLeft,
@@ -18,6 +17,11 @@ import {
 type TabType = 'orderBook' | 'recentTrades' | 'info';
 type OrderType = 'market' | 'limit' | 'stop';
 type TimeInterval = '15m' | '1h' | '4h' | '1d';
+
+// Constants
+const CURRENCY_LOCALE = 'en-US';
+const CURRENCY_FORMAT_OPTIONS = { minimumFractionDigits: 2, maximumFractionDigits: 2 };
+const SELL_PRICE_OFFSET = 1.5;
 
 export default function TradingInterface() {
   const [activeTab, setActiveTab] = useState<TabType>('orderBook');
@@ -409,7 +413,7 @@ export default function TradingInterface() {
         </View>
         <View style={styles.sizeDetails}>
           <Text style={styles.sizeDetailText}>
-            Value: ${sizeValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            Value: ${sizeValue.toLocaleString(CURRENCY_LOCALE, CURRENCY_FORMAT_OPTIONS)}
           </Text>
           <Text style={styles.sizeDetailText}>
             Fee: ${fee.toFixed(2)}
@@ -425,7 +429,7 @@ export default function TradingInterface() {
         </TouchableOpacity>
         <TouchableOpacity style={styles.sellButton}>
           <Text style={styles.sellButtonText}>Short / Sell</Text>
-          <Text style={styles.buttonPrice}>{(markPrice - 1.5).toFixed(1)}</Text>
+          <Text style={styles.buttonPrice}>{(markPrice - SELL_PRICE_OFFSET).toFixed(1)}</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -672,12 +676,12 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   orderPriceBuy: {
-    color: '#EF4444',
+    color: '#22C55E',
     fontSize: 13,
     fontWeight: '600',
   },
   orderPriceSell: {
-    color: '#3B82F6',
+    color: '#EF4444',
     fontSize: 13,
     fontWeight: '600',
   },
