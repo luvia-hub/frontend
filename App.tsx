@@ -1,26 +1,29 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, TouchableOpacity, Text, SafeAreaView, Modal } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { BarChart3, ArrowRightLeft, TrendingUp } from 'lucide-react-native';
+import { Home, ArrowRightLeft, TrendingUp, Wallet } from 'lucide-react-native';
+import DashboardScreen from './components/DashboardScreen';
 import CryptoPortfolioDashboard from './components/CryptoPortfolioDashboard';
 import TradingInterface from './components/TradingInterface';
 import ConnectSourcesScreen from './components/ConnectSourcesScreen';
 import MarketListScreen from './components/MarketListScreen';
 
-type Tab = 'markets' | 'portfolio' | 'trade';
+type Tab = 'home' | 'trade' | 'earn' | 'wallet';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<Tab>('markets');
+  const [activeTab, setActiveTab] = useState<Tab>('home');
   const [showConnectSources, setShowConnectSources] = useState(false);
 
   const getHeaderTitle = () => {
     switch (activeTab) {
-      case 'markets':
-        return 'Markets';
-      case 'portfolio':
-        return 'Portfolio';
+      case 'home':
+        return 'Home';
       case 'trade':
         return 'Trade';
+      case 'earn':
+        return 'Earn';
+      case 'wallet':
+        return 'Wallet';
       default:
         return '';
     }
@@ -30,8 +33,8 @@ export default function App() {
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
 
-      {/* Header - Hide for Markets tab */}
-      {activeTab !== 'markets' && (
+      {/* Header - Hide for Home tab */}
+      {activeTab !== 'home' && (
         <View style={styles.header}>
           <Text style={styles.headerTitle}>{getHeaderTitle()}</Text>
         </View>
@@ -39,12 +42,14 @@ export default function App() {
 
       {/* Content */}
       <View style={styles.content}>
-        {activeTab === 'markets' ? (
-          <MarketListScreen />
-        ) : activeTab === 'portfolio' ? (
+        {activeTab === 'home' ? (
+          <DashboardScreen />
+        ) : activeTab === 'trade' ? (
+          <TradingInterface />
+        ) : activeTab === 'earn' ? (
           <CryptoPortfolioDashboard onConnectPress={() => setShowConnectSources(true)} />
         ) : (
-          <TradingInterface />
+          <MarketListScreen />
         )}
       </View>
 
@@ -62,43 +67,22 @@ export default function App() {
       <View style={styles.tabBar}>
         <TouchableOpacity
           style={styles.tabItem}
-          onPress={() => setActiveTab('markets')}
+          onPress={() => setActiveTab('home')}
           accessibilityRole="tab"
-          accessibilityLabel="Markets tab"
-          accessibilityState={{ selected: activeTab === 'markets' }}
+          accessibilityLabel="Home tab"
+          accessibilityState={{ selected: activeTab === 'home' }}
         >
-          <TrendingUp
+          <Home
             size={22}
-            color={activeTab === 'markets' ? '#FFFFFF' : '#6B7280'}
+            color={activeTab === 'home' ? '#FFFFFF' : '#6B7280'}
           />
           <Text
             style={[
               styles.tabLabel,
-              activeTab === 'markets' && styles.tabLabelActive,
+              activeTab === 'home' && styles.tabLabelActive,
             ]}
           >
-            Markets
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.tabItem}
-          onPress={() => setActiveTab('portfolio')}
-          accessibilityRole="tab"
-          accessibilityLabel="Portfolio tab"
-          accessibilityState={{ selected: activeTab === 'portfolio' }}
-        >
-          <BarChart3
-            size={22}
-            color={activeTab === 'portfolio' ? '#FFFFFF' : '#6B7280'}
-          />
-          <Text
-            style={[
-              styles.tabLabel,
-              activeTab === 'portfolio' && styles.tabLabelActive,
-            ]}
-          >
-            Portfolio
+            Home
           </Text>
         </TouchableOpacity>
 
@@ -120,6 +104,48 @@ export default function App() {
             ]}
           >
             Trade
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.tabItem}
+          onPress={() => setActiveTab('earn')}
+          accessibilityRole="tab"
+          accessibilityLabel="Earn tab"
+          accessibilityState={{ selected: activeTab === 'earn' }}
+        >
+          <TrendingUp
+            size={22}
+            color={activeTab === 'earn' ? '#FFFFFF' : '#6B7280'}
+          />
+          <Text
+            style={[
+              styles.tabLabel,
+              activeTab === 'earn' && styles.tabLabelActive,
+            ]}
+          >
+            Earn
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.tabItem}
+          onPress={() => setActiveTab('wallet')}
+          accessibilityRole="tab"
+          accessibilityLabel="Wallet tab"
+          accessibilityState={{ selected: activeTab === 'wallet' }}
+        >
+          <Wallet
+            size={22}
+            color={activeTab === 'wallet' ? '#FFFFFF' : '#6B7280'}
+          />
+          <Text
+            style={[
+              styles.tabLabel,
+              activeTab === 'wallet' && styles.tabLabelActive,
+            ]}
+          >
+            Wallet
           </Text>
         </TouchableOpacity>
       </View>
