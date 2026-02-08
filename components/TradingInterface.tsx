@@ -27,10 +27,10 @@ export default function TradingInterface() {
 
   const currentPrice = 42_350.0;
   const liquidationPrice = isLong
-    ? currentPrice * (1 - 1 / leverage * 0.9)
-    : currentPrice * (1 + 1 / leverage * 0.9);
+    ? currentPrice * (1 - (1 / leverage) * 0.9)
+    : currentPrice * (1 + (1 / leverage) * 0.9);
   const slippage = 0.05;
-  const estimatedFees = size ? (parseFloat(size) * 0.0006).toFixed(4) : '0.00';
+  const estimatedFees = size ? (parseFloat(size) * 0.0006).toFixed(4) : '0.0000';
 
   return (
     <ScrollView
