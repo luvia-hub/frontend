@@ -77,6 +77,7 @@ const MOCK_MARKETS: Market[] = [
 const PORTFOLIO_VALUE = 124592.40;
 const WALLET_ADDRESS = '0x84...9a2';
 const VOLUME_CHANGE = 5.2;
+const OPACITY_LIGHT = '20'; // ~12% opacity for badge backgrounds
 
 type FilterTab = 'all' | 'favorites' | 'volatility' | 'funds';
 
@@ -95,6 +96,16 @@ function getExchangeColor(exchange: string): string {
   }
 }
 
+function getAvatarColor(symbol: string): string {
+  if (symbol.startsWith('BTC')) return '#F7931A';
+  if (symbol.startsWith('ETH')) return '#627EEA';
+  if (symbol.startsWith('SOL')) return '#14F195';
+  if (symbol.startsWith('ARB')) return '#2D374B';
+  if (symbol.startsWith('PEPE')) return '#4CAF50';
+  if (symbol.startsWith('AVAX')) return '#E84142';
+  return '#9CA3AF';
+}
+
 interface MarketRowProps {
   market: Market;
 }
@@ -107,14 +118,7 @@ function MarketRow({ market }: MarketRowProps) {
 
   const isRatePositive = market.bestRate.rate >= 0;
   const rateColor = isRatePositive ? '#22C55E' : '#EF4444';
-
-  // Generate simple avatar based on symbol
-  const avatarBg = market.symbol.startsWith('BTC') ? '#F7931A' :
-    market.symbol.startsWith('ETH') ? '#627EEA' :
-    market.symbol.startsWith('SOL') ? '#14F195' :
-    market.symbol.startsWith('ARB') ? '#2D374B' :
-    market.symbol.startsWith('PEPE') ? '#4CAF50' :
-    '#E84142'; // AVAX
+  const avatarBg = getAvatarColor(market.symbol);
 
   return (
     <TouchableOpacity
@@ -160,7 +164,7 @@ function MarketRow({ market }: MarketRowProps) {
         <View
           style={[
             styles.rateBadge,
-            { backgroundColor: getExchangeColor(market.bestRate.exchange) + '20' },
+            { backgroundColor: getExchangeColor(market.bestRate.exchange) + OPACITY_LIGHT },
           ]}
         >
           <View style={[styles.exchangeDot, { backgroundColor: getExchangeColor(market.bestRate.exchange) }]} />
@@ -249,7 +253,7 @@ export default function MarketListScreen() {
             style={styles.searchInput}
             value={searchQuery}
             onChangeText={setSearchQuery}
-            placeholder="Search BTC, ETH, SOL pairs..."
+            placeholder="Search BTC, ETH, SOL..."
             placeholderTextColor="#4B5563"
             accessibilityLabel="Search markets"
           />
