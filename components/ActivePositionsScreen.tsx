@@ -103,7 +103,7 @@ interface PositionCardProps {
 
 function PositionCard({ position, onClose, onShare }: PositionCardProps) {
   const isProfitable = position.pnl >= 0;
-  const pnlColor = isProfitable ? '#22C55E' : '#6B8AFF';
+  const pnlColor = isProfitable ? '#22C55E' : '#EF4444';
   const sideColor = position.side === 'Long' ? '#22C55E' : '#EF4444';
   const sideBg = position.side === 'Long' ? '#22C55E15' : '#EF444415';
 
@@ -132,7 +132,7 @@ function PositionCard({ position, onClose, onShare }: PositionCardProps) {
             </Text>
           </View>
           <Text style={[styles.positionPnl, { color: pnlColor }]}>
-            {isProfitable ? '+' : ''}{position.pnl < 0 ? '-' : ''}${Math.abs(position.pnl).toFixed(2)}
+            {isProfitable ? '+' : '-'}${Math.abs(position.pnl).toFixed(2)}
           </Text>
           <Text style={[styles.positionPnlPercent, { color: pnlColor }]}>
             {isProfitable ? '+' : ''}{position.pnlPercent.toFixed(2)}%
