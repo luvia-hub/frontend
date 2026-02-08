@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, TouchableOpacity, Text, SafeAreaView } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, Text, SafeAreaView, Modal } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { BarChart3, ArrowRightLeft } from 'lucide-react-native';
 import CryptoPortfolioDashboard from './components/CryptoPortfolioDashboard';
 import TradingInterface from './components/TradingInterface';
+import ConnectSourcesScreen from './components/ConnectSourcesScreen';
 
 type Tab = 'portfolio' | 'trade';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('portfolio');
+  const [showConnectSources, setShowConnectSources] = useState(false);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -24,11 +26,21 @@ export default function App() {
       {/* Content */}
       <View style={styles.content}>
         {activeTab === 'portfolio' ? (
-          <CryptoPortfolioDashboard />
+          <CryptoPortfolioDashboard onConnectPress={() => setShowConnectSources(true)} />
         ) : (
           <TradingInterface />
         )}
       </View>
+
+      {/* Connect Sources Modal */}
+      <Modal
+        visible={showConnectSources}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={() => setShowConnectSources(false)}
+      >
+        <ConnectSourcesScreen onClose={() => setShowConnectSources(false)} />
+      </Modal>
 
       {/* Bottom Tab Bar */}
       <View style={styles.tabBar}>

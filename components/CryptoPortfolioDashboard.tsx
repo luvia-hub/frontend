@@ -6,7 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
-import { TrendingUp, TrendingDown, LogOut, Wallet } from 'lucide-react-native';
+import { TrendingUp, TrendingDown, LogOut, Wallet, Plus } from 'lucide-react-native';
 
 interface Position {
   id: string;
@@ -101,7 +101,11 @@ function PositionRow({ position, onExit }: PositionRowProps) {
   );
 }
 
-export default function CryptoPortfolioDashboard() {
+interface CryptoPortfolioDashboardProps {
+  onConnectPress: () => void;
+}
+
+export default function CryptoPortfolioDashboard({ onConnectPress }: CryptoPortfolioDashboardProps) {
   const handleExit = (id: string) => {
     // Exit position handler - would connect to trading API
   };
@@ -126,6 +130,17 @@ export default function CryptoPortfolioDashboard() {
           <Text style={styles.equityChangeText}>+3.24% today</Text>
         </View>
       </View>
+
+      {/* Connect Sources Button */}
+      <TouchableOpacity
+        style={styles.connectButton}
+        onPress={onConnectPress}
+        accessibilityRole="button"
+        accessibilityLabel="Connect DEX and Wallet"
+      >
+        <Plus size={20} color="#FFFFFF" />
+        <Text style={styles.connectButtonText}>Connect DEX & Wallet</Text>
+      </TouchableOpacity>
 
       {/* Active Positions */}
       <View style={styles.sectionHeader}>
@@ -287,5 +302,20 @@ const styles = StyleSheet.create({
     color: '#EF4444',
     fontSize: 13,
     fontWeight: '600',
+  },
+  connectButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#3B82F6',
+    paddingVertical: 16,
+    borderRadius: 12,
+    marginBottom: 24,
+    gap: 8,
+  },
+  connectButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
   },
 });
