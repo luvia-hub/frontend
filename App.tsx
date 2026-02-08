@@ -7,12 +7,14 @@ import CryptoPortfolioDashboard from './components/CryptoPortfolioDashboard';
 import TradingInterface from './components/TradingInterface';
 import ConnectSourcesScreen from './components/ConnectSourcesScreen';
 import MarketListScreen from './components/MarketListScreen';
+import ActivePositionsScreen from './components/ActivePositionsScreen';
 
 type Tab = 'home' | 'trade' | 'earn' | 'wallet';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('home');
   const [showConnectSources, setShowConnectSources] = useState(false);
+  const [showActivePositions, setShowActivePositions] = useState(false);
 
   const getHeaderTitle = () => {
     switch (activeTab) {
@@ -43,7 +45,7 @@ export default function App() {
       {/* Content */}
       <View style={styles.content}>
         {activeTab === 'home' ? (
-          <DashboardScreen />
+          <DashboardScreen onViewAllPositions={() => setShowActivePositions(true)} />
         ) : activeTab === 'trade' ? (
           <TradingInterface />
         ) : activeTab === 'earn' ? (
@@ -61,6 +63,16 @@ export default function App() {
         onRequestClose={() => setShowConnectSources(false)}
       >
         <ConnectSourcesScreen onClose={() => setShowConnectSources(false)} />
+      </Modal>
+
+      {/* Active Positions Modal */}
+      <Modal
+        visible={showActivePositions}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={() => setShowActivePositions(false)}
+      >
+        <ActivePositionsScreen onBack={() => setShowActivePositions(false)} />
       </Modal>
 
       {/* Bottom Tab Bar */}

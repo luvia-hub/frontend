@@ -184,7 +184,11 @@ function PositionCard({ position }: PositionCardProps) {
   );
 }
 
-export default function DashboardScreen() {
+interface DashboardScreenProps {
+  onViewAllPositions?: () => void;
+}
+
+export default function DashboardScreen({ onViewAllPositions }: DashboardScreenProps) {
   return (
     <ScrollView
       style={styles.container}
@@ -259,7 +263,11 @@ export default function DashboardScreen() {
       {/* Top Active Positions Section */}
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Top Active Positions</Text>
-        <TouchableOpacity accessibilityRole="button" accessibilityLabel={`View All ${MOCK_POSITIONS.length} Positions`}>
+        <TouchableOpacity 
+          onPress={onViewAllPositions}
+          accessibilityRole="button" 
+          accessibilityLabel={`View All ${MOCK_POSITIONS.length} Positions`}
+        >
           <Text style={styles.viewAllLink}>View All ({MOCK_POSITIONS.length})</Text>
         </TouchableOpacity>
       </View>
