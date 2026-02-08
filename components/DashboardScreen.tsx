@@ -145,7 +145,7 @@ function ExchangeCard({ exchange }: ExchangeCardProps) {
             <Text style={styles.activeText}>{exchange.activePositions} Active Positions</Text>
           </View>
         )}
-        <TouchableOpacity style={styles.tradeButton}>
+        <TouchableOpacity style={styles.tradeButton} accessibilityRole="button" accessibilityLabel={`Trade on ${exchange.name}`}>
           <Text style={styles.tradeButtonText}>Trade</Text>
         </TouchableOpacity>
       </View>
@@ -205,10 +205,10 @@ export default function DashboardScreen() {
           </View>
         </View>
         <View style={styles.headerRight}>
-          <TouchableOpacity style={styles.iconButton} accessibilityLabel="Notifications">
+          <TouchableOpacity style={styles.iconButton} accessibilityRole="button" accessibilityLabel="Notifications">
             <Bell size={20} color="#9CA3AF" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton} accessibilityLabel="Settings">
+          <TouchableOpacity style={styles.iconButton} accessibilityRole="button" accessibilityLabel="Settings">
             <Settings size={20} color="#9CA3AF" />
           </TouchableOpacity>
         </View>
@@ -247,7 +247,7 @@ export default function DashboardScreen() {
       {/* Your Exchanges Section */}
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Your Exchanges</Text>
-        <TouchableOpacity>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Manage APIs">
           <Text style={styles.manageLink}>Manage APIs</Text>
         </TouchableOpacity>
       </View>
@@ -259,7 +259,7 @@ export default function DashboardScreen() {
       {/* Top Active Positions Section */}
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Top Active Positions</Text>
-        <TouchableOpacity>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel={`View All ${MOCK_POSITIONS.length} Positions`}>
           <Text style={styles.viewAllLink}>View All ({MOCK_POSITIONS.length})</Text>
         </TouchableOpacity>
       </View>
@@ -271,7 +271,7 @@ export default function DashboardScreen() {
       </View>
 
       {/* Bottom Navigation Arrow Button */}
-      <TouchableOpacity style={styles.bottomNavButton}>
+      <TouchableOpacity style={styles.bottomNavButton} accessibilityRole="button" accessibilityLabel="Quick Trade">
         <View style={styles.bottomNavCircle}>
           <ArrowUpDown size={24} color="#FFFFFF" />
         </View>
