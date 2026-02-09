@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -17,12 +17,133 @@ import {
 type TabType = 'orderBook' | 'recentTrades' | 'info';
 type OrderType = 'market' | 'limit' | 'stop';
 type TimeInterval = '15m' | '1h' | '4h' | '1d';
+type ConnectionState = 'loading' | 'open' | 'error';
+type TradeSide = 'buy' | 'sell';
+
+type OrderBookLevel = {
+  price: number;
+  size: number;
+  total: number;
+};
+
+type OrderBookState = {
+  bids: OrderBookLevel[];
+  asks: OrderBookLevel[];
+};
+
+type Trade = {
+  id: string;
+  price: number;
+  size: number;
+  side: TradeSide;
+  timestamp: number;
+};
 
 // Constants
 const CURRENCY_LOCALE = 'en-US';
 const CURRENCY_FORMAT_OPTIONS = { minimumFractionDigits: 2, maximumFractionDigits: 2 };
 // Bid-Ask spread for display purposes (simulated market depth)
 const BID_ASK_SPREAD = 1.5;
+const WEBSOCKET_URL = 'wss://api.hyperliquid.xyz/ws';
+const DEFAULT_PAIR = 'BTC';
+const MAX_ORDER_LEVELS = 6;
+const MAX_TRADES = 12;
+
+const toNumber = (value: unknown) => {
+  if (typeof value === 'number') {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }
+  return 0;
+};
+
+const parseTradeSide = (value: unknown): TradeSide => {
+  if (typeof value === 'string') {
+    const normalized = value.toLowerCase();
+    if (['buy', 'b', 'bid', 'long', 'takerbuy', 'buyer', 'bull'].includes(normalized)) {
+      return 'buy';
+    }
+    if (['sell', 's', 'a', 'ask', 'short', 'takersell', 'seller', 'bear'].includes(normalized)) {
+      return 'sell';
+    }
+  }
+  if (typeof value === 'boolean') {
+    return value ? 'buy' : 'sell';
+  }
+  return 'buy';
+};
+
+const parseOrderBookSide = (levels: unknown): OrderBookLevel[] => {
+  if (!Array.isArray(levels)) {
+    return [];
+  }
+
+  return levels
+    .map((level) => {
+      if (Array.isArray(level)) {
+        const [priceValue, sizeValue] = level;
+        const price = toNumber(priceValue);
+        const size = toNumber(sizeValue);
+        return { price, size, total: price * size };
+      }
+      if (level && typeof level === 'object') {
+        const levelRecord = level as Record<string, unknown>;
+        const price = toNumber(levelRecord.px ?? levelRecord.price);
+        const size = toNumber(levelRecord.sz ?? levelRecord.size);
+        return { price, size, total: price * size };
+      }
+      return null;
+    })
+    .filter((level): level is OrderBookLevel => Boolean(level) && level.price > 0 && level.size > 0);
+};
+
+const parseTrades = (payload: unknown): Trade[] => {
+  if (!Array.isArray(payload)) {
+    return [];
+  }
+
+  return payload
+    .map((trade, index) => {
+      if (!trade) {
+        return null;
+      }
+      if (Array.isArray(trade)) {
+        const [priceValue, sizeValue, timestampValue, sideValue] = trade;
+        const price = toNumber(priceValue);
+        const size = toNumber(sizeValue);
+        const timestamp = toNumber(timestampValue ?? Date.now());
+        const side = parseTradeSide(sideValue);
+        return {
+          id: `${timestamp}-${price}-${size}-${index}`,
+          price,
+          size,
+          side,
+          timestamp,
+        };
+      }
+      if (typeof trade !== 'object') {
+        return null;
+      }
+      const tradeRecord = trade as Record<string, unknown>;
+      const price = toNumber(tradeRecord.px ?? tradeRecord.price);
+      const size = toNumber(tradeRecord.sz ?? tradeRecord.size);
+      const timestamp = toNumber(tradeRecord.time ?? tradeRecord.timestamp ?? Date.now());
+      const side = parseTradeSide(tradeRecord.side ?? tradeRecord.dir ?? tradeRecord.isBuyerMaker);
+      const id = String(tradeRecord.hash ?? tradeRecord.id ?? `${timestamp}-${price}-${size}-${index}`);
+
+      return {
+        id,
+        price,
+        size,
+        side,
+        timestamp,
+      };
+    })
+    .filter((trade): trade is Trade => Boolean(trade) && trade.price > 0 && trade.size > 0);
+};
 
 export default function TradingInterface() {
   const [activeTab, setActiveTab] = useState<TabType>('orderBook');
@@ -30,32 +151,121 @@ export default function TradingInterface() {
   const [timeInterval, setTimeInterval] = useState<TimeInterval>('15m');
   const [size, setSize] = useState('0.5');
   const [leverage, setLeverage] = useState(10);
+  const [selectedPair] = useState(DEFAULT_PAIR);
+  const [connectionState, setConnectionState] = useState<ConnectionState>('loading');
+  const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [orderBook, setOrderBook] = useState<OrderBookState | null>(null);
+  const [recentTrades, setRecentTrades] = useState<Trade[]>([]);
 
   const leveragePresets = [1, 10, 20, 50, 100];
   const timeIntervals: TimeInterval[] = ['15m', '1h', '4h', '1d'];
 
-  const markPrice = 64230.5;
+  const baseMarkPrice = 64230.5;
   const indexPrice = 64215.1;
   const volume24h = 1.2; // in billions
   const priceChange = 2.4; // percentage
   const available = 12450.0;
+  const bestBid = orderBook?.bids[0]?.price;
+  const bestAsk = orderBook?.asks[0]?.price;
+  const markPrice =
+    bestBid && bestAsk ? (bestBid + bestAsk) / 2 : baseMarkPrice;
   const sizeValue = parseFloat(size) * markPrice;
   const fee = sizeValue * 0.0006;
 
-  // Mock order book data
-  const buyOrders = [
-    { price: 64235.5, size: 0.4532, total: 29106.23 },
-    { price: 64230.0, size: 0.5532, total: 35529.10 },
-    { price: 64225.0, size: 0.3421, total: 21970.20 },
-    { price: 64220.0, size: 0.6123, total: 39317.81 },
-  ];
+  const displayedBids = useMemo(
+    () => (orderBook?.bids ?? []).slice(0, MAX_ORDER_LEVELS),
+    [orderBook],
+  );
+  const displayedAsks = useMemo(
+    () => (orderBook?.asks ?? []).slice(0, MAX_ORDER_LEVELS),
+    [orderBook],
+  );
+  const hasOrderBookData = displayedBids.length > 0 || displayedAsks.length > 0;
+  const pairLabel = `${selectedPair}/USD`;
 
-  const sellOrders = [
-    { price: 64230.5, size: 0.5532, total: 35527.61 },
-    { price: 64235.0, size: 0.4321, total: 27751.74 },
-    { price: 64240.0, size: 0.3890, total: 24989.36 },
-    { price: 64245.0, size: 0.5621, total: 36105.36 },
-  ];
+  useEffect(() => {
+    let isMounted = true;
+    const websocket = new WebSocket(WEBSOCKET_URL);
+
+    setConnectionState('loading');
+    setConnectionError(null);
+
+    websocket.onopen = () => {
+      if (!isMounted) {
+        return;
+      }
+      setConnectionState('open');
+      websocket.send(
+        JSON.stringify({
+          method: 'subscribe',
+          subscription: { type: 'l2Book', coin: selectedPair },
+        }),
+      );
+      websocket.send(
+        JSON.stringify({
+          method: 'subscribe',
+          subscription: { type: 'trades', coin: selectedPair },
+        }),
+      );
+    };
+
+    websocket.onerror = () => {
+      if (!isMounted) {
+        return;
+      }
+      setConnectionState('error');
+      setConnectionError('Unable to connect to Hyperliquid.');
+    };
+
+    websocket.onclose = () => {
+      if (!isMounted) {
+        return;
+      }
+      setConnectionState('error');
+      setConnectionError('Connection closed. Live data paused.');
+    };
+
+    websocket.onmessage = (event) => {
+      if (!isMounted) {
+        return;
+      }
+      try {
+        const payload = JSON.parse(event.data);
+        const channel = payload.channel ?? payload.type;
+
+        if (channel === 'l2Book') {
+          const levels = payload.data?.levels ?? payload.data?.book ?? payload.data?.l2Book?.levels;
+          const [bids, asks] = Array.isArray(levels) ? levels : [];
+          const parsedBids = parseOrderBookSide(bids);
+          const parsedAsks = parseOrderBookSide(asks);
+
+          setOrderBook({
+            bids: parsedBids,
+            asks: parsedAsks,
+          });
+        }
+
+        if (channel === 'trades') {
+          const tradesPayload = payload.data?.trades ?? payload.data;
+          const parsedTrades = parseTrades(tradesPayload);
+
+          if (parsedTrades.length > 0) {
+            setRecentTrades((prev) => {
+              const merged = [...parsedTrades, ...prev];
+              return merged.slice(0, MAX_TRADES);
+            });
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to parse Hyperliquid WebSocket message', error);
+      }
+    };
+
+    return () => {
+      isMounted = false;
+      websocket.close();
+    };
+  }, [selectedPair]);
 
   // Mock candlestick chart data (simplified representation)
   const chartData = [
@@ -83,7 +293,7 @@ export default function TradingInterface() {
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <View style={styles.pairRow}>
-            <Text style={styles.pairText}>BTC/USD</Text>
+            <Text style={styles.pairText}>{pairLabel}</Text>
             <View style={styles.perpBadge}>
               <Text style={styles.perpText}>PERP</Text>
             </View>
@@ -113,6 +323,16 @@ export default function TradingInterface() {
           <Text style={styles.statValue}>${volume24h.toFixed(1)}B</Text>
         </View>
       </View>
+
+      {connectionState !== 'open' && (
+        <View style={styles.connectionBanner}>
+          <Text style={styles.connectionBannerText}>
+            {connectionState === 'loading'
+              ? 'Connecting to Hyperliquid live feeds...'
+              : connectionError ?? 'Live data unavailable.'}
+          </Text>
+        </View>
+      )}
 
       {/* Chart Section */}
       <View style={styles.chartSection}>
@@ -255,34 +475,73 @@ export default function TradingInterface() {
             <Text style={styles.orderBookHeaderText}>Ask Price</Text>
             <Text style={styles.orderBookHeaderText}>Size (BTC)</Text>
           </View>
-          <View style={styles.orderBookContent}>
-            <View style={styles.orderBookColumn}>
-              {buyOrders.map((order, index) => (
-                <View key={index} style={styles.orderRow}>
-                  <Text style={styles.orderSize}>{order.size.toFixed(4)}</Text>
-                  <Text style={styles.orderPriceBuy}>
-                    {order.price.toLocaleString()}
-                  </Text>
-                </View>
-              ))}
+          {hasOrderBookData ? (
+            <View style={styles.orderBookContent}>
+              <View style={styles.orderBookColumn}>
+                {displayedBids.map((order, index) => (
+                  <View key={`${order.price}-${index}`} style={styles.orderRow}>
+                    <Text style={styles.orderSize}>{order.size.toFixed(4)}</Text>
+                    <Text style={styles.orderPriceBuy}>
+                      {order.price.toLocaleString()}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+              <View style={styles.orderBookColumn}>
+                {displayedAsks.map((order, index) => (
+                  <View key={`${order.price}-${index}`} style={styles.orderRow}>
+                    <Text style={styles.orderPriceSell}>
+                      {order.price.toLocaleString()}
+                    </Text>
+                    <Text style={styles.orderSize}>{order.size.toFixed(4)}</Text>
+                  </View>
+                ))}
+              </View>
             </View>
-            <View style={styles.orderBookColumn}>
-              {sellOrders.map((order, index) => (
-                <View key={index} style={styles.orderRow}>
-                  <Text style={styles.orderPriceSell}>
-                    {order.price.toLocaleString()}
-                  </Text>
-                  <Text style={styles.orderSize}>{order.size.toFixed(4)}</Text>
-                </View>
-              ))}
+          ) : (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateText}>
+                {connectionState === 'loading'
+                  ? 'Loading live order book...'
+                  : connectionState === 'error'
+                  ? 'Order book unavailable.'
+                  : 'Awaiting live order book updates.'}
+              </Text>
             </View>
-          </View>
+          )}
         </View>
       )}
 
       {activeTab === 'recentTrades' && (
-        <View style={styles.tabContent}>
-          <Text style={styles.tabContentText}>Recent Trades</Text>
+        <View style={styles.tradesContainer}>
+          {recentTrades.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateText}>
+                {connectionState === 'loading'
+                  ? 'Loading recent trades...'
+                  : connectionState === 'error'
+                  ? 'Recent trades unavailable.'
+                  : 'No trades yet.'}
+              </Text>
+            </View>
+          ) : (
+            recentTrades.map((trade) => (
+              <View key={trade.id} style={styles.tradeRow}>
+                <Text
+                  style={[
+                    styles.tradePrice,
+                    trade.side === 'buy' ? styles.tradeBuy : styles.tradeSell,
+                  ]}
+                >
+                  {trade.price.toLocaleString()}
+                </Text>
+                <Text style={styles.tradeSize}>{trade.size.toFixed(4)}</Text>
+                <Text style={styles.tradeTime}>
+                  {new Date(trade.timestamp).toLocaleTimeString()}
+                </Text>
+              </View>
+            ))
+          )}
         </View>
       )}
 
@@ -505,6 +764,20 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     backgroundColor: '#0A0E17',
   },
+  connectionBanner: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#111827',
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: '#1E293B',
+  },
+  connectionBannerText: {
+    color: '#9CA3AF',
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
   statItem: {
     alignItems: 'center',
   },
@@ -663,6 +936,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 16,
   },
+  emptyState: {
+    paddingVertical: 24,
+    alignItems: 'center',
+  },
+  emptyStateText: {
+    color: '#6B7280',
+    fontSize: 13,
+    fontWeight: '500',
+  },
   orderBookColumn: {
     flex: 1,
   },
@@ -693,6 +975,36 @@ const styles = StyleSheet.create({
   tabContentText: {
     color: '#6B7280',
     fontSize: 14,
+  },
+  tradesContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    gap: 8,
+  },
+  tradeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+  },
+  tradePrice: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  tradeBuy: {
+    color: '#22C55E',
+  },
+  tradeSell: {
+    color: '#EF4444',
+  },
+  tradeSize: {
+    color: '#9CA3AF',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  tradeTime: {
+    color: '#6B7280',
+    fontSize: 11,
+    fontWeight: '500',
   },
   orderTypeContainer: {
     flexDirection: 'row',
