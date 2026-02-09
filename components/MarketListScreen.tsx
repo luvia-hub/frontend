@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
+  FlatList,
   TextInput,
   TouchableOpacity,
 } from 'react-native';
@@ -22,57 +23,24 @@ interface Market {
   volatile?: boolean;
 }
 
-const MOCK_MARKETS: Market[] = [
-  {
-    id: '1',
-    symbol: 'BTC-PERP',
-    name: 'Bitcoin',
-    price: 42150.20,
-    priceChange: 5.2,
-    bestRate: { exchange: 'GMX', rate: 0.01 },
-  },
-  {
-    id: '2',
-    symbol: 'ETH-PERP',
-    name: 'Ethereum',
-    price: 2240.10,
-    priceChange: -1.2,
-    bestRate: { exchange: 'dYdX', rate: -0.02 },
-  },
-  {
-    id: '3',
-    symbol: 'SOL-PERP',
-    name: 'Solana',
-    price: 98.45,
-    priceChange: 12.4,
-    bestRate: { exchange: 'HMX', rate: 0.04 },
-  },
-  {
-    id: '4',
-    symbol: 'ARB-PERP',
-    name: 'Arbitrum',
-    price: 1.82,
-    priceChange: 0.0,
-    bestRate: { exchange: 'GMX', rate: -0.01 },
-  },
-  {
-    id: '5',
-    symbol: 'PEPE-1000',
-    name: 'Pepe',
-    price: 0.00124,
-    priceChange: -18.4,
-    bestRate: { exchange: 'UniV3', rate: -0.45 },
-    volatile: true,
-  },
-  {
-    id: '6',
-    symbol: 'AVAX-PERP',
-    name: 'Avalanche',
-    price: 34.12,
-    priceChange: 2.1,
-    bestRate: { exchange: 'GMX', rate: 0.01 },
-  },
-];
+interface HyperliquidAssetMeta {
+  name: string;
+  szDecimals: number;
+  maxLeverage: number;
+  onlyIsolated?: boolean;
+  isDelisted?: boolean;
+}
+
+interface HyperliquidAssetCtx {
+  markPx?: string;
+  prevDayPx?: string;
+  funding?: string;
+}
+
+const HYPERLIQUID_INFO_URL = 'https://api.hyperliquid.xyz/info';
+const HYPERLIQUID_EXCHANGE = 'Hyperliquid';
+const VOLATILITY_THRESHOLD = 5;
+const PRICE_REFRESH_MS = 10000;
 
 const PORTFOLIO_VALUE = 124592.40;
 const WALLET_ADDRESS = '0x84...9a2';
@@ -80,6 +48,38 @@ const VOLUME_CHANGE = 5.2;
 const OPACITY_LIGHT = '20'; // ~12% opacity for badge backgrounds
 
 type FilterTab = 'all' | 'favorites' | 'volatility' | 'funds';
+
+function parseNumber(value?: string | number): number | undefined {
+  if (value === null || value === undefined) return undefined;
+  const parsed = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function createMarket(asset: HyperliquidAssetMeta): Market {
+  return {
+    id: asset.name,
+    symbol: `${asset.name}-PERP`,
+    name: asset.name,
+    price: 0,
+    priceChange: 0,
+    bestRate: { exchange: HYPERLIQUID_EXCHANGE, rate: 0 },
+    volatile: false,
+  };
+}
+
+async function fetchHyperliquidInfo<T>(payload: Record<string, unknown>): Promise<T> {
+  const response = await fetch(HYPERLIQUID_INFO_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Hyperliquid API error: ${response.status}`);
+  }
+
+  return response.json() as Promise<T>;
+}
 
 function getExchangeColor(exchange: string): string {
   switch (exchange) {
@@ -91,6 +91,8 @@ function getExchangeColor(exchange: string): string {
       return '#F97316';
     case 'UniV3':
       return '#EC4899';
+    case HYPERLIQUID_EXCHANGE:
+      return '#0EA5E9';
     default:
       return '#9CA3AF';
   }
@@ -186,19 +188,118 @@ function MarketRow({ market }: MarketRowProps) {
 }
 
 export default function MarketListScreen() {
+  const [marketMeta, setMarketMeta] = useState<HyperliquidAssetMeta[]>([]);
+  const [markets, setMarkets] = useState<Market[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
 
-  const filteredMarkets = MOCK_MARKETS.filter((market) => {
-    const matchesSearch = market.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      market.name.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    if (activeFilter === 'volatility') {
-      return matchesSearch && market.volatile;
-    }
-    
-    return matchesSearch;
-  });
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadMeta = async () => {
+      try {
+        const data = await fetchHyperliquidInfo<{ universe: HyperliquidAssetMeta[] } | HyperliquidAssetMeta[]>({
+          type: 'meta',
+        });
+        const universe = Array.isArray(data) ? data : data.universe ?? [];
+        const availableAssets = universe.filter((asset) => !asset.isDelisted);
+
+        if (!isMounted) return;
+        setMarketMeta(availableAssets);
+        setMarkets(availableAssets.map(createMarket));
+      } catch (error) {
+        console.warn('Failed to load Hyperliquid markets', error);
+      }
+    };
+
+    loadMeta();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!marketMeta.length) return;
+    let isMounted = true;
+
+    const updateMarketData = async () => {
+      try {
+        const payload = await fetchHyperliquidInfo<[HyperliquidAssetMeta[], HyperliquidAssetCtx[]] | {
+          universe: HyperliquidAssetMeta[];
+          assetCtxs: HyperliquidAssetCtx[];
+        }>({ type: 'metaAndAssetCtxs' });
+
+        const [universe, assetCtxs] = Array.isArray(payload)
+          ? payload
+          : [payload.universe ?? [], payload.assetCtxs ?? []];
+
+        const ctxByName = new Map<string, HyperliquidAssetCtx>();
+        universe.forEach((asset, index) => {
+          if (asset?.name) {
+            ctxByName.set(asset.name, assetCtxs[index]);
+          }
+        });
+
+        if (!isMounted) return;
+        setMarkets((prevMarkets) => {
+          const prevById = new Map(prevMarkets.map((market) => [market.id, market]));
+
+          return marketMeta.map((asset) => {
+            const existing = prevById.get(asset.name) ?? createMarket(asset);
+            const ctx = ctxByName.get(asset.name);
+
+            if (!ctx) return existing;
+
+            const markPx = parseNumber(ctx.markPx) ?? existing.price;
+            const prevDayPx = parseNumber(ctx.prevDayPx);
+            const priceChange = prevDayPx
+              ? ((markPx - prevDayPx) / prevDayPx) * 100
+              : existing.priceChange;
+            const fundingRate = parseNumber(ctx.funding);
+            const bestRate = fundingRate !== undefined ? fundingRate * 100 : existing.bestRate.rate;
+
+            return {
+              ...existing,
+              price: markPx,
+              priceChange,
+              bestRate: { exchange: HYPERLIQUID_EXCHANGE, rate: bestRate },
+              volatile: Math.abs(priceChange) >= VOLATILITY_THRESHOLD,
+            };
+          });
+        });
+      } catch (error) {
+        console.warn('Failed to update Hyperliquid market data', error);
+      }
+    };
+
+    updateMarketData();
+    const interval = setInterval(updateMarketData, PRICE_REFRESH_MS);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [marketMeta]);
+
+  const filteredMarkets = useMemo(() => {
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+
+    return markets.filter((market) => {
+      const matchesSearch =
+        !normalizedQuery ||
+        market.symbol.toLowerCase().includes(normalizedQuery) ||
+        market.name.toLowerCase().includes(normalizedQuery);
+
+      if (activeFilter === 'volatility') {
+        return matchesSearch && market.volatile;
+      }
+
+      return matchesSearch;
+    });
+  }, [activeFilter, markets, searchQuery]);
+
+  const renderMarketRow = useCallback(({ item }: { item: Market }) => <MarketRow market={item} />, []);
 
   return (
     <View style={styles.container}>
@@ -325,15 +426,18 @@ export default function MarketListScreen() {
       </View>
 
       {/* Market List */}
-      <ScrollView
+      <FlatList
+        data={filteredMarkets}
+        renderItem={renderMarketRow}
+        keyExtractor={(item) => item.id}
         style={styles.marketList}
         contentContainerStyle={styles.marketListContent}
         showsVerticalScrollIndicator={false}
-      >
-        {filteredMarkets.map((market) => (
-          <MarketRow key={market.id} market={market} />
-        ))}
-      </ScrollView>
+        initialNumToRender={24}
+        maxToRenderPerBatch={24}
+        windowSize={7}
+        removeClippedSubviews
+      />
     </View>
   );
 }
