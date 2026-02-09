@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { Search, SlidersHorizontal, Star, TrendingUp, TrendingDown, Copy } from 'lucide-react-native';
+import { PublicClient, HttpTransport } from '@far1s/hyperliquid';
 
 interface Market {
   id: string;
@@ -23,29 +24,9 @@ interface Market {
   volatile?: boolean;
 }
 
-interface HyperliquidAssetMeta {
-  name: string;
-  szDecimals: number;
-  maxLeverage: number;
-  onlyIsolated?: boolean;
-  isDelisted?: boolean;
-}
 
-interface HyperliquidAssetCtx {
-  markPx?: string | null;
-  prevDayPx?: string | null;
-  funding?: string | null;
-}
 
-type HyperliquidMetaResponse = { universe: HyperliquidAssetMeta[] } | HyperliquidAssetMeta[];
-type HyperliquidMetaAndCtxsResponse =
-  | [HyperliquidAssetMeta[], HyperliquidAssetCtx[]]
-  | {
-      universe: HyperliquidAssetMeta[];
-      assetCtxs: HyperliquidAssetCtx[];
-    };
 
-const HYPERLIQUID_INFO_URL = 'https://api.hyperliquid.xyz/info';
 const HYPERLIQUID_EXCHANGE = 'Hyperliquid';
 const VOLATILITY_THRESHOLD = 5;
 const PRICE_REFRESH_MS = 10000;
@@ -57,13 +38,9 @@ const OPACITY_LIGHT = '20'; // ~12% opacity for badge backgrounds
 
 type FilterTab = 'all' | 'favorites' | 'volatility' | 'funds';
 
-function parseNumber(value?: string | number | null): number | undefined {
-  if (value === null || value === undefined) return undefined;
-  const parsed = typeof value === 'number' ? value : Number(value);
-  return Number.isFinite(parsed) ? parsed : undefined;
-}
 
-function createMarket(asset: HyperliquidAssetMeta): Market {
+
+function createMarket(asset: any): Market {
   return {
     id: asset.name,
     symbol: `${asset.name}-PERP`,
@@ -75,18 +52,10 @@ function createMarket(asset: HyperliquidAssetMeta): Market {
   };
 }
 
-async function fetchHyperliquidInfo<T>(payload: Record<string, unknown>): Promise<T> {
-  const response = await fetch(HYPERLIQUID_INFO_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Hyperliquid API error: ${response.status}`);
-  }
-
-  return response.json() as Promise<T>;
+function safeFloat(val: any): number | undefined {
+  if (val === null || val === undefined) return undefined;
+  const num = parseFloat(val);
+  return isNaN(num) ? undefined : num;
 }
 
 function getExchangeColor(exchange: string): string {
@@ -196,119 +165,71 @@ const MarketRow = React.memo(function MarketRow({ market }: MarketRowProps) {
 });
 
 export default function MarketListScreen() {
-  const [marketMeta, setMarketMeta] = useState<HyperliquidAssetMeta[]>([]);
   const [markets, setMarkets] = useState<Market[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
-  const baseMarketById = useMemo(
-    () => new Map(marketMeta.map((asset) => [asset.name, createMarket(asset)])),
-    [marketMeta],
-  );
 
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadMeta = async () => {
-      try {
-        const data = await fetchHyperliquidInfo<HyperliquidMetaResponse>({
-          type: 'meta',
-        });
-        const universe = Array.isArray(data) ? data : data.universe ?? [];
-        const availableAssets = universe.filter((asset) => !asset.isDelisted);
-
-        if (!isMounted) return;
-        setMarketMeta(availableAssets);
-        setMarkets(availableAssets.map(createMarket));
-      } catch (error) {
-        console.warn('Failed to load Hyperliquid markets', { error });
-      }
-    };
-
-    loadMeta();
-
-    return () => {
-      isMounted = false;
-    };
+  const client = useMemo(() => {
+    return new PublicClient({
+      transport: new HttpTransport({ url: 'https://api.hyperliquid.xyz' }),
+    });
   }, []);
 
   useEffect(() => {
-    if (!marketMeta.length) return;
     let isMounted = true;
 
     const updateMarketData = async () => {
       try {
-        const payload = await fetchHyperliquidInfo<HyperliquidMetaAndCtxsResponse>({
-          type: 'metaAndAssetCtxs',
-        });
-
-        const [universe, assetCtxs] = Array.isArray(payload)
-          ? payload
-          : [payload.universe ?? [], payload.assetCtxs ?? []];
-
-        if (universe.length !== assetCtxs.length) {
-          console.warn('Hyperliquid asset context length mismatch', {
-            universe: universe.length,
-            assetCtxs: assetCtxs.length,
-          });
-        }
-
-        // Hyperliquid metaAndAssetCtxs returns universe and assetCtxs aligned by index.
-        // Use the shorter length to avoid pairing mismatched entries if the payload is partial.
-        const ctxByName = new Map<string, HyperliquidAssetCtx>();
-        const pairCount = Math.min(universe.length, assetCtxs.length);
-        for (let assetIndex = 0; assetIndex < pairCount; assetIndex += 1) {
-          const asset = universe[assetIndex];
-          ctxByName.set(asset.name, assetCtxs[assetIndex]);
-        }
+        // metaAndAssetCtxs returns [meta, assetCtxs]
+        const [meta, assetCtxs] = await client.metaAndAssetCtxs();
 
         if (!isMounted) return;
-        setMarkets((prevMarkets) => {
-          const prevById = new Map(prevMarkets.map((market) => [market.id, market]));
 
-          return marketMeta.map((asset) => {
-            const baseMarket = baseMarketById.get(asset.name);
-            if (!baseMarket) {
-              return createMarket(asset);
+        const universe = meta.universe;
+        const availableAssets = universe.filter((asset: any) => !asset.isDelisted);
+
+        // Map contexts by asset name for O(1) lookup.
+        // The API returns universe and assetCtxs aligned by index.
+        const ctxByName = new Map();
+        // Use the min length to be safe, though they should match
+        const count = Math.min(universe.length, assetCtxs.length);
+        for (let i = 0; i < count; i++) {
+          ctxByName.set(universe[i].name, assetCtxs[i]);
+        }
+
+        const newMarkets = availableAssets.map((asset: any) => {
+          let market = createMarket(asset);
+          const ctx = ctxByName.get(asset.name);
+
+          if (ctx) {
+            const markPx = safeFloat(ctx.markPx);
+            const prevDayPx = safeFloat(ctx.prevDayPx);
+            const funding = safeFloat(ctx.funding);
+
+            if (markPx !== undefined) {
+              market.price = markPx;
             }
 
-            const existing = prevById.get(asset.name) ?? baseMarket;
-            const ctx = ctxByName.get(asset.name);
-
-            if (!ctx) {
-              return {
-                ...existing,
-                volatile: false,
-              };
+            if (prevDayPx !== undefined && prevDayPx > 0 && markPx !== undefined) {
+              market.priceChange = ((markPx - prevDayPx) / prevDayPx) * 100;
             }
 
-            const markPx = parseNumber(ctx.markPx);
-            if (markPx === undefined) {
-              return {
-                ...existing,
-                volatile: false,
-              };
+            if (funding !== undefined) {
+              // Funding is usually an hourly rate or similar, depends on display preference.
+              // Existing code multiplied by 100.
+              market.bestRate.rate = funding * 100;
             }
-            const prevDayPx = parseNumber(ctx.prevDayPx);
-            const hasPrevDayPx = prevDayPx !== undefined && prevDayPx > 0;
-            let priceChange = 0;
-            if (hasPrevDayPx) {
-              priceChange = ((markPx - prevDayPx) / prevDayPx) * 100;
-            }
-            const fundingRate = parseNumber(ctx.funding);
-            const fundingRatePercent = fundingRate !== undefined ? fundingRate * 100 : 0;
-            const volatile = hasPrevDayPx ? Math.abs(priceChange) >= VOLATILITY_THRESHOLD : false;
 
-            return {
-              ...existing,
-              price: markPx,
-              priceChange,
-              bestRate: { exchange: HYPERLIQUID_EXCHANGE, rate: fundingRatePercent },
-              volatile,
-            };
-          });
+            // Recalculate volatility
+            market.volatile = Math.abs(market.priceChange) >= VOLATILITY_THRESHOLD;
+          }
+
+          return market;
         });
+
+        setMarkets(newMarkets);
       } catch (error) {
-        console.warn('Failed to update Hyperliquid market data', { error });
+        console.warn('Failed to update Hyperliquid market data', error);
       }
     };
 
@@ -319,7 +240,7 @@ export default function MarketListScreen() {
       isMounted = false;
       clearInterval(interval);
     };
-  }, [baseMarketById, marketMeta]);
+  }, [client]);
 
   const filteredMarkets = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
@@ -630,18 +551,21 @@ const styles = StyleSheet.create({
     borderColor: '#1E293B',
   },
   filterTabs: {
-    paddingHorizontal: 16,
     marginBottom: 16,
+    height: 40,
+    maxHeight: 40,
   },
   filterTabsContent: {
     gap: 8,
+    paddingHorizontal: 16,
+    alignItems: 'center',
   },
   filterTab: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 8,
     borderRadius: 20,
     backgroundColor: '#141926',
     borderWidth: 1,
