@@ -1,19 +1,23 @@
-name: Build Debug App
+name: Android Build
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - develop
   pull_request:
-    branches: [main]
+    branches:
+      - main
+      - develop
   workflow_dispatch:
 
-permissions:
-  contents: read
-
 jobs:
-  lint:
-    name: Lint & Type Check
+  build:
+    name: Build Android APK
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -21,50 +25,33 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: npm
+          node-version: '20'
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Type check
-        run: npx tsc --noEmit
-
-  build-android-debug:
-    name: Build Android Debug APK
-    needs: lint
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Java
+        uses: actions/setup-java@v4
         with:
-          node-version: 20
-          cache: npm
+          distribution: 'temurin'
+          java-version: '17'
 
-      - name: Setup EAS CLI
-        uses: expo/expo-github-action@v8
-        with:
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Prebuild Expo project
+        run: npx expo prebuild --platform android --clean
 
-      - name: Build Android debug APK
-        run: eas build --platform android --profile preview --non-interactive --json | tee build-result.json
-
-      - name: Print build info
-        if: always()
+      - name: Build Android APK
         run: |
-          if [ -f build-result.json ]; then
-            echo "### Build Result" >> "$GITHUB_STEP_SUMMARY"
-            BUILD_ID=$(jq -r '.[0].id // empty' build-result.json 2>/dev/null)
-            BUILD_URL="https://expo.dev/accounts/$(jq -r '.[0].ownerAccount.name // empty' build-result.json 2>/dev/null)/projects/$(jq -r '.[0].project.slug // empty' build-result.json 2>/dev/null)/builds/${BUILD_ID}"
-            echo "Build ID: ${BUILD_ID}"
-            echo "Build URL: ${BUILD_URL}"
-            echo "- **Build ID**: \`${BUILD_ID}\`" >> "$GITHUB_STEP_SUMMARY"
-            echo "- **Build URL**: [View Build](${BUILD_URL})" >> "$GITHUB_STEP_SUMMARY"
-          fi
+          cd android
+          chmod +x ./gradlew
+          ./gradlew assembleRelease --no-daemon
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release
+          path: android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 30

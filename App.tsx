@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, TouchableOpacity, Text, SafeAreaView, Modal } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, Text, Modal } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Home, ArrowRightLeft, TrendingUp, Wallet } from 'lucide-react-native';
 import DashboardScreen from './components/DashboardScreen';
 import CryptoPortfolioDashboard from './components/CryptoPortfolioDashboard';
