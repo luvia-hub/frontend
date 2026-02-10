@@ -16,6 +16,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('home');
   const [showConnectSources, setShowConnectSources] = useState(false);
   const [showActivePositions, setShowActivePositions] = useState(false);
+  const [selectedMarket, setSelectedMarket] = useState<string | undefined>(undefined);
 
   const getHeaderTitle = () => {
     switch (activeTab) {
@@ -30,6 +31,11 @@ export default function App() {
       default:
         return '';
     }
+  };
+
+  const handleMarketPress = (market: { symbol: string; name: string }) => {
+    setSelectedMarket(market.name);
+    setActiveTab('trade');
   };
 
   return (
@@ -48,11 +54,11 @@ export default function App() {
         {activeTab === 'home' ? (
           <DashboardScreen onViewAllPositions={() => setShowActivePositions(true)} />
         ) : activeTab === 'trade' ? (
-          <TradingInterface />
+          <TradingInterface selectedMarket={selectedMarket} />
         ) : activeTab === 'earn' ? (
           <CryptoPortfolioDashboard onConnectPress={() => setShowConnectSources(true)} />
         ) : (
-          <MarketListScreen />
+          <MarketListScreen onMarketPress={handleMarketPress} />
         )}
       </View>
 
