@@ -29,9 +29,10 @@ interface Web3AuthUserInfo {
 
 /**
  * Helper function to check if a value is a valid optional string
+ * Handles undefined, null, or string values
  */
 function isOptionalString(value: unknown): boolean {
-  return value === undefined || typeof value === 'string';
+  return value === undefined || value === null || typeof value === 'string';
 }
 
 /**
@@ -45,27 +46,17 @@ function isWeb3AuthUserInfo(obj: unknown): obj is Web3AuthUserInfo {
   
   const candidate = obj as Record<string, unknown>;
   
-  // Check that all properties have the correct types (all are optional strings)
-  if ('email' in candidate && !isOptionalString(candidate.email)) {
-    return false;
-  }
-  if ('name' in candidate && !isOptionalString(candidate.name)) {
-    return false;
-  }
-  if ('profileImage' in candidate && !isOptionalString(candidate.profileImage)) {
-    return false;
-  }
-  if ('aggregateVerifier' in candidate && !isOptionalString(candidate.aggregateVerifier)) {
-    return false;
-  }
-  if ('verifier' in candidate && !isOptionalString(candidate.verifier)) {
-    return false;
-  }
-  if ('verifierId' in candidate && !isOptionalString(candidate.verifierId)) {
-    return false;
-  }
-  if ('typeOfLogin' in candidate && !isOptionalString(candidate.typeOfLogin)) {
-    return false;
+  // All properties in Web3AuthUserInfo are optional strings
+  const stringProperties = [
+    'email', 'name', 'profileImage', 'aggregateVerifier', 
+    'verifier', 'verifierId', 'typeOfLogin'
+  ];
+  
+  // Check that all properties have the correct types
+  for (const prop of stringProperties) {
+    if (prop in candidate && !isOptionalString(candidate[prop])) {
+      return false;
+    }
   }
   
   // At least one identifying property should be present
