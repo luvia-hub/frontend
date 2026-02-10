@@ -61,7 +61,8 @@ function isWeb3AuthUserInfo(obj: unknown): obj is Web3AuthUserInfo {
   
   // At least one identifying property should be present
   // We only check user-facing properties here; technical properties like aggregateVerifier
-  // and typeOfLogin may not always be present but are not needed for user identification
+  // and typeOfLogin may not always be present but are not needed for user identification.
+  // An empty object is not considered valid user info as it provides no useful information.
   return 'email' in candidate || 'name' in candidate || 'profileImage' in candidate || 
          'verifier' in candidate || 'verifierId' in candidate;
 }
@@ -90,6 +91,7 @@ async function safeGetUserInfo(web3authInstance: Web3Auth | null): Promise<Web3A
   try {
     const result = web3authInstance.userInfo();
     // Await the result to handle both synchronous and asynchronous return values
+    // In JavaScript, awaiting a non-Promise value (including null/undefined) is safe and returns that value
     const userInfo = await result;
     
     // Validate that the result matches our expected interface
