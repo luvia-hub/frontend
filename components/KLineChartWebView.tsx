@@ -11,13 +11,20 @@ interface CandleData {
   volume?: number;
 }
 
+interface CrosshairData {
+  x?: number;
+  y?: number;
+  kLineData?: CandleData;
+  paneId?: string;
+}
+
 interface KLineChartWebViewProps {
   data: CandleData[];
   width?: number;
   height?: number;
   theme?: 'dark' | 'light';
   interval?: string;
-  onCrosshairChange?: (data: any) => void;
+  onCrosshairChange?: (data: CrosshairData | null) => void;
 }
 
 export default function KLineChartWebView({

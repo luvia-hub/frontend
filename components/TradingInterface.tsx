@@ -293,7 +293,7 @@ export default function TradingInterface({ selectedMarket }: TradingInterfacePro
 
             setChartData((prev) => {
               const lastCandle = prev[prev.length - 1];
-              // If timestamp matches last candle (within 60s), update existing candle
+              // If timestamp matches last candle (within 60000ms/60s), update existing candle
               if (lastCandle && Math.abs(lastCandle.timestamp - newCandle.timestamp) < 60000) {
                 const updated = [...prev];
                 updated[updated.length - 1] = newCandle;
