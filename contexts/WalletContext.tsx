@@ -27,7 +27,17 @@ interface Web3AuthUserInfo {
   typeOfLogin?: string;
 }
 
-// Type guard for Web3AuthUserInfo
+/**
+ * Helper function to check if a value is a valid optional string
+ */
+function isOptionalString(value: unknown): boolean {
+  return value === undefined || typeof value === 'string';
+}
+
+/**
+ * Type guard for Web3AuthUserInfo
+ * Validates that the object has the correct structure and property types
+ */
 function isWeb3AuthUserInfo(obj: unknown): obj is Web3AuthUserInfo {
   if (typeof obj !== 'object' || obj === null) {
     return false;
@@ -35,12 +45,7 @@ function isWeb3AuthUserInfo(obj: unknown): obj is Web3AuthUserInfo {
   
   const candidate = obj as Record<string, unknown>;
   
-  // Helper function to check if a property is a valid optional string
-  const isOptionalString = (value: unknown): boolean => {
-    return value === undefined || typeof value === 'string';
-  };
-  
-  // Check that if properties exist, they have the correct types
+  // Check that all properties have the correct types (all are optional strings)
   if ('email' in candidate && !isOptionalString(candidate.email)) {
     return false;
   }
@@ -64,6 +69,8 @@ function isWeb3AuthUserInfo(obj: unknown): obj is Web3AuthUserInfo {
   }
   
   // At least one identifying property should be present
+  // We only check user-facing properties here; technical properties like aggregateVerifier
+  // and typeOfLogin may not always be present but are not needed for user identification
   return 'email' in candidate || 'name' in candidate || 'profileImage' in candidate || 
          'verifier' in candidate || 'verifierId' in candidate;
 }
