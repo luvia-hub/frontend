@@ -1,4 +1,4 @@
-import { WalletClient, HttpTransport, OrderParameters } from '@far1s/hyperliquid';
+import { WalletClient, HttpTransport, OrderParameters, WalletClientParameters } from '@far1s/hyperliquid';
 import { ethers } from 'ethers';
 
 const HYPERLIQUID_API_URL = 'https://api.hyperliquid.xyz';
@@ -26,6 +26,11 @@ function floatToWire(x: number): string {
 /**
  * Get asset index from asset name
  */
+interface UniverseAsset {
+  name: string;
+  isDelisted?: boolean;
+}
+
 async function getAssetIndex(asset: string): Promise<number> {
   try {
     const response = await fetch(`${HYPERLIQUID_API_URL}/info`, {
@@ -34,7 +39,8 @@ async function getAssetIndex(asset: string): Promise<number> {
       body: JSON.stringify({ type: 'meta' }),
     });
     const data = await response.json();
-    const index = data.universe.findIndex((u: any) => u.name === asset);
+    const universe: UniverseAsset[] = data.universe;
+    const index = universe.findIndex((u) => u.name === asset);
     if (index === -1) throw new Error(`Asset ${asset} not found`);
     return index;
   } catch (error) {
@@ -54,9 +60,10 @@ export async function placeOrder(
     const assetIndex = await getAssetIndex(order.asset);
 
     // Create WalletClient with the signer
+    // Using type assertion as the library accepts ethers.Signer but types may not match exactly
     const walletClient = new WalletClient({
       transport: new HttpTransport({ url: HYPERLIQUID_API_URL }),
-      wallet: signer as any, // The library supports ethers signers
+      wallet: signer as unknown as WalletClientParameters['wallet'],
       isTestnet: false,
     });
 
@@ -108,7 +115,7 @@ export async function cancelOrder(
 
     const walletClient = new WalletClient({
       transport: new HttpTransport({ url: HYPERLIQUID_API_URL }),
-      wallet: signer as any,
+      wallet: signer as unknown as WalletClientParameters['wallet'],
       isTestnet: false,
     });
 

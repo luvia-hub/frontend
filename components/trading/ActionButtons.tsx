@@ -62,6 +62,19 @@ function ActionButtons({ markPrice, orderType, size, price, leverage, selectedPa
         return { success: false, message: 'Failed to place order' };
     };
 
+    /**
+     * Determine the tpsl value for stop orders
+     * For Hyperliquid:
+     * - 'sl' (stop loss) = triggers when price goes BELOW triggerPx
+     * - 'tp' (take profit) = triggers when price goes ABOVE triggerPx
+     * 
+     * For a BUY order (going long), we typically want stop loss below entry (sell to exit)
+     * For a SELL order (going short), we typically want take profit above entry (buy to exit)
+     */
+    const getTpslForStopOrder = (side: 'buy' | 'sell'): 'tp' | 'sl' => {
+        return side === 'buy' ? 'sl' : 'tp';
+    };
+
     const handleConfirmOrder = async () => {
         if (!wallet.signer) {
             Alert.alert('Error', 'Wallet signer not available.');
@@ -90,14 +103,10 @@ function ActionButtons({ markPrice, orderType, size, price, leverage, selectedPa
             if (orderType === 'limit') {
                 orderRequest.orderType.limit = { tif: 'Gtc' };
             } else if (orderType === 'stop') {
-                // For stop orders, the tpsl determines trigger direction
-                // 'tp' = trigger when price goes above triggerPx (take profit for shorts, stop entry for longs)
-                // 'sl' = trigger when price goes below triggerPx (stop loss for longs, take profit entry for shorts)
-                // Using 'sl' for buy (long stop loss) and 'tp' for sell (short take profit)
                 orderRequest.orderType.trigger = {
                     triggerPx: orderPrice,
                     isMarket: false,
-                    tpsl: orderSide === 'buy' ? 'sl' : 'tp',
+                    tpsl: getTpslForStopOrder(orderSide),
                 };
             } else {
                 // Market order - use limit with IoC
