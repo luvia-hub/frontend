@@ -34,7 +34,9 @@ const styles = StyleSheet.create({
         justifyContent: 'space-around',
         paddingHorizontal: 16,
         paddingVertical: 12,
-        backgroundColor: '#0A0E17',
+        backgroundColor: '#141926',
+        borderBottomWidth: 1,
+        borderBottomColor: '#1E293B',
     },
     statItem: {
         alignItems: 'center',

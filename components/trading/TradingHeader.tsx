@@ -40,7 +40,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: 16,
-        backgroundColor: '#0A0E17',
+        backgroundColor: '#141926',
+        borderBottomWidth: 1,
+        borderBottomColor: '#1E293B',
     },
     backButton: {
         padding: 4,
