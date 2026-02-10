@@ -138,77 +138,86 @@ export default function TradingInterface({ selectedMarket }: TradingInterfacePro
         connectionError={connectionError}
       />
 
-      <TimeIntervalBar
-        timeInterval={timeInterval}
-        onTimeIntervalChange={handleTimeIntervalChange}
-        chartData={chartData}
-        activeIndicators={activeIndicators}
-        onToggleIndicator={handleToggleIndicator}
-      />
-
-      <TabBar
-        tabs={CONTENT_TABS}
-        activeTab={activeTab}
-        onTabChange={handleTabChange}
-      />
-
-      {activeTab === 'orderBook' && (
-        <OrderBook
-          bids={displayedBids}
-          asks={displayedAsks}
-          connectionState={connectionState}
+      {/* Chart Panel */}
+      <View style={[styles.panel, styles.chartPanel]}>
+        <TimeIntervalBar
+          timeInterval={timeInterval}
+          onTimeIntervalChange={handleTimeIntervalChange}
+          chartData={chartData}
+          activeIndicators={activeIndicators}
+          onToggleIndicator={handleToggleIndicator}
         />
-      )}
+      </View>
 
-      {activeTab === 'recentTrades' && (
-        <RecentTrades
-          trades={recentTrades}
-          connectionState={connectionState}
+      {/* Order Book / Recent Trades Panel */}
+      <View style={[styles.panel, styles.dataPanel]}>
+        <TabBar
+          tabs={CONTENT_TABS}
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
         />
-      )}
 
-      {activeTab === 'info' && (
-        <View style={styles.tabContent}>
-          <Text style={styles.tabContentText}>Info</Text>
-        </View>
-      )}
+        {activeTab === 'orderBook' && (
+          <OrderBook
+            bids={displayedBids}
+            asks={displayedAsks}
+            connectionState={connectionState}
+          />
+        )}
 
-      <TabBar
-        tabs={ORDER_TYPE_TABS}
-        activeTab={orderType}
-        onTabChange={handleOrderTypeChange}
-        trailing={availableTrailing}
-      />
+        {activeTab === 'recentTrades' && (
+          <RecentTrades
+            trades={recentTrades}
+            connectionState={connectionState}
+          />
+        )}
 
-      <LeverageSelector
-        leverage={leverage}
-        onLeverageChange={handleLeverageChange}
-      />
+        {activeTab === 'info' && (
+          <View style={styles.tabContent}>
+            <Text style={styles.tabContentText}>Info</Text>
+          </View>
+        )}
+      </View>
 
-      {(orderType === 'limit' || orderType === 'stop') && (
-        <PriceInput
-          price={price}
-          onPriceChange={handlePriceChange}
-          label={orderType === 'limit' ? 'Limit Price' : 'Stop Price'}
+      {/* Trading Form Panel */}
+      <View style={[styles.panel, styles.tradePanel]}>
+        <TabBar
+          tabs={ORDER_TYPE_TABS}
+          activeTab={orderType}
+          onTabChange={handleOrderTypeChange}
+          trailing={availableTrailing}
+        />
+
+        <LeverageSelector
+          leverage={leverage}
+          onLeverageChange={handleLeverageChange}
+        />
+
+        {(orderType === 'limit' || orderType === 'stop') && (
+          <PriceInput
+            price={price}
+            onPriceChange={handlePriceChange}
+            label={orderType === 'limit' ? 'Limit Price' : 'Stop Price'}
+            markPrice={markPrice}
+          />
+        )}
+
+        <SizeInput
+          size={size}
+          onSizeChange={handleSizeChange}
+          sizeValue={sizeValue}
+          fee={fee}
+        />
+
+        <ActionButtons 
           markPrice={markPrice}
+          orderType={orderType}
+          size={size}
+          price={price}
+          leverage={leverage}
+          selectedPair={selectedPair}
         />
-      )}
-
-      <SizeInput
-        size={size}
-        onSizeChange={handleSizeChange}
-        sizeValue={sizeValue}
-        fee={fee}
-      />
-
-      <ActionButtons 
-        markPrice={markPrice}
-        orderType={orderType}
-        size={size}
-        price={price}
-        leverage={leverage}
-        selectedPair={selectedPair}
-      />
+      </View>
     </ScrollView>
   );
 }
@@ -220,6 +229,22 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     paddingBottom: 32,
+    gap: 4,
+  },
+  panel: {
+    backgroundColor: '#141926',
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: '#1E293B',
+  },
+  chartPanel: {
+    marginTop: 4,
+  },
+  dataPanel: {
+    paddingBottom: 12,
+  },
+  tradePanel: {
+    paddingBottom: 4,
   },
   availableContainer: {
     marginLeft: 'auto',
