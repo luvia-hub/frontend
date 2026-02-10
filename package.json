@@ -11,9 +11,13 @@
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",
     "@far1s/hyperliquid": "^0.17.2-rn",
+    "@web3auth/ethereum-provider": "^9.7.0",
+    "@web3auth/react-native-sdk": "^8.1.0",
     "ethers": "^6.16.0",
     "expo": "~54.0.33",
+    "expo-secure-store": "^15.0.8",
     "expo-status-bar": "~3.0.9",
+    "expo-web-browser": "^15.0.10",
     "klinecharts": "^9.8.6",
     "lucide-react-native": "^0.474.0",
     "react": "19.1.0",
