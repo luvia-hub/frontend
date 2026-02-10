@@ -96,7 +96,9 @@ export function WalletProvider({ children }: WalletProviderProps) {
           let userInfo = null;
           try {
             if (typeof web3AuthInstance.userInfo === 'function') {
-              userInfo = web3AuthInstance.userInfo();
+              const result = web3AuthInstance.userInfo();
+              // Handle both synchronous and asynchronous return values
+              userInfo = result instanceof Promise ? await result : result;
             }
           } catch (error) {
             console.warn('Failed to get user info:', error);
@@ -155,7 +157,9 @@ export function WalletProvider({ children }: WalletProviderProps) {
       let userInfo = null;
       try {
         if (typeof web3auth.userInfo === 'function') {
-          userInfo = web3auth.userInfo();
+          const result = web3auth.userInfo();
+          // Handle both synchronous and asynchronous return values
+          userInfo = result instanceof Promise ? await result : result;
         }
       } catch (error) {
         console.warn('Failed to get user info:', error);
