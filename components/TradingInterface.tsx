@@ -155,7 +155,7 @@ export default function TradingInterface({ selectedMarket }: TradingInterfacePro
   const [timeInterval, setTimeInterval] = useState<TimeInterval>('15m');
   const [size, setSize] = useState('0.5');
   const [leverage, setLeverage] = useState(10);
-  const [selectedPair] = useState(selectedMarket ?? DEFAULT_PAIR);
+  const selectedPair = selectedMarket ?? DEFAULT_PAIR;
   const [connectionState, setConnectionState] = useState<ConnectionState>('loading');
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [orderBook, setOrderBook] = useState<OrderBookState | null>(null);
