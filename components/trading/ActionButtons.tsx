@@ -80,11 +80,24 @@ function ActionButtons({ markPrice, orderType, size, price, leverage, selectedPa
 
             const response = await placeOrder(wallet.signer, orderRequest);
 
-            if (response.status === 'ok') {
+            // Check if the response indicates success
+            // The @far1s/hyperliquid library returns different response structures
+            if (response && response.status === 'ok') {
                 Alert.alert('Success', 'Order placed successfully!');
                 setShowConfirmation(false);
+            } else if (response && response.response?.data?.statuses) {
+                // Check individual order statuses
+                const firstStatus = response.response.data.statuses[0];
+                if ('error' in firstStatus && firstStatus.error) {
+                    Alert.alert('Error', firstStatus.error);
+                } else if ('filled' in firstStatus || 'resting' in firstStatus) {
+                    Alert.alert('Success', 'Order placed successfully!');
+                    setShowConfirmation(false);
+                } else {
+                    Alert.alert('Error', 'Unknown order status');
+                }
             } else {
-                Alert.alert('Error', response.error || 'Failed to place order');
+                Alert.alert('Error', 'Failed to place order');
             }
         } catch (error) {
             console.error('Order placement error:', error);
