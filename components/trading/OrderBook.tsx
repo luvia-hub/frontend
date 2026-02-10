@@ -11,6 +11,31 @@ interface OrderBookProps {
 function OrderBook({ bids, asks, connectionState }: OrderBookProps) {
     const hasData = bids.length > 0 || asks.length > 0;
 
+    // Calculate cumulative totals for depth visualization
+    const bidsWithCumulative = React.useMemo(() => {
+        let cumulative = 0;
+        return bids.map(order => {
+            cumulative += order.size;
+            return { ...order, cumulative };
+        });
+    }, [bids]);
+
+    const asksWithCumulative = React.useMemo(() => {
+        let cumulative = 0;
+        return asks.map(order => {
+            cumulative += order.size;
+            return { ...order, cumulative };
+        });
+    }, [asks]);
+
+    // Find max cumulative values for percentage calculation
+    const maxBidTotal = bidsWithCumulative.length > 0 
+        ? bidsWithCumulative[bidsWithCumulative.length - 1].cumulative 
+        : 0;
+    const maxAskTotal = asksWithCumulative.length > 0 
+        ? asksWithCumulative[asksWithCumulative.length - 1].cumulative 
+        : 0;
+
     return (
         <View style={styles.orderBookContainer}>
             <View style={styles.orderBookHeader}>
@@ -22,24 +47,44 @@ function OrderBook({ bids, asks, connectionState }: OrderBookProps) {
             {hasData ? (
                 <View style={styles.orderBookContent}>
                     <View style={styles.orderBookColumn}>
-                        {bids.map((order, index) => (
-                            <View key={`${order.price}-${index}`} style={styles.orderRow}>
-                                <Text style={styles.orderSize}>{order.size.toFixed(4)}</Text>
-                                <Text style={styles.orderPriceBuy}>
-                                    {order.price.toLocaleString()}
-                                </Text>
-                            </View>
-                        ))}
+                        {bidsWithCumulative.map((order, index) => {
+                            const depthPercentage = maxBidTotal > 0 ? (order.cumulative / maxBidTotal) * 100 : 0;
+                            return (
+                                <View key={`${order.price}-${index}`} style={styles.orderRow}>
+                                    <View 
+                                        style={[
+                                            styles.depthBar, 
+                                            styles.depthBarBid,
+                                            { width: `${depthPercentage}%` }
+                                        ]} 
+                                    />
+                                    <Text style={styles.orderSize}>{order.size.toFixed(4)}</Text>
+                                    <Text style={styles.orderPriceBuy}>
+                                        {order.price.toLocaleString()}
+                                    </Text>
+                                </View>
+                            );
+                        })}
                     </View>
                     <View style={styles.orderBookColumn}>
-                        {asks.map((order, index) => (
-                            <View key={`${order.price}-${index}`} style={styles.orderRow}>
-                                <Text style={styles.orderPriceSell}>
-                                    {order.price.toLocaleString()}
-                                </Text>
-                                <Text style={styles.orderSize}>{order.size.toFixed(4)}</Text>
-                            </View>
-                        ))}
+                        {asksWithCumulative.map((order, index) => {
+                            const depthPercentage = maxAskTotal > 0 ? (order.cumulative / maxAskTotal) * 100 : 0;
+                            return (
+                                <View key={`${order.price}-${index}`} style={styles.orderRow}>
+                                    <View 
+                                        style={[
+                                            styles.depthBar, 
+                                            styles.depthBarAsk,
+                                            { width: `${depthPercentage}%` }
+                                        ]} 
+                                    />
+                                    <Text style={styles.orderPriceSell}>
+                                        {order.price.toLocaleString()}
+                                    </Text>
+                                    <Text style={styles.orderSize}>{order.size.toFixed(4)}</Text>
+                                </View>
+                            );
+                        })}
                     </View>
                 </View>
             ) : (
@@ -87,21 +132,41 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         paddingVertical: 4,
+        position: 'relative',
+        overflow: 'hidden',
+    },
+    depthBar: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        bottom: 0,
+        right: 0,
+    },
+    depthBarBid: {
+        backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    },
+    depthBarAsk: {
+        backgroundColor: 'rgba(239, 68, 68, 0.15)',
     },
     orderSize: {
         color: '#9CA3AF',
         fontSize: 12,
         fontWeight: '500',
+        zIndex: 1,
     },
     orderPriceBuy: {
         color: '#22C55E',
         fontSize: 13,
         fontWeight: '600',
+        fontFamily: 'monospace',
+        zIndex: 1,
     },
     orderPriceSell: {
         color: '#EF4444',
         fontSize: 13,
         fontWeight: '600',
+        fontFamily: 'monospace',
+        zIndex: 1,
     },
     emptyState: {
         paddingVertical: 24,
