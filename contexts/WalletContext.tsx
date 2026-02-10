@@ -41,7 +41,9 @@ async function safeGetUserInfo(web3authInstance: Web3Auth | null): Promise<any |
     // Use Promise.resolve to safely handle both cases
     return await Promise.resolve(result);
   } catch (error) {
-    console.warn('Failed to get user info:', error);
+    // This is expected during initialization on some platforms (e.g., Android)
+    // where userInfo() may not be immediately available
+    console.warn('Could not retrieve user info (this is normal during initialization):', error);
     return null;
   }
 }
