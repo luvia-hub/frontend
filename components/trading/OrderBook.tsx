@@ -138,15 +138,15 @@ const styles = StyleSheet.create({
     depthBar: {
         position: 'absolute',
         top: 0,
-        left: 0,
         bottom: 0,
-        right: 0,
     },
     depthBarBid: {
         backgroundColor: 'rgba(34, 197, 94, 0.15)',
+        left: 0,
     },
     depthBarAsk: {
         backgroundColor: 'rgba(239, 68, 68, 0.15)',
+        right: 0,
     },
     orderSize: {
         color: '#9CA3AF',
