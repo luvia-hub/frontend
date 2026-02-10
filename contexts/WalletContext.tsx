@@ -35,14 +35,31 @@ function isWeb3AuthUserInfo(obj: unknown): obj is Web3AuthUserInfo {
   
   const candidate = obj as Record<string, unknown>;
   
+  // Helper function to check if a property is a valid optional string
+  const isOptionalString = (value: unknown): boolean => {
+    return value === undefined || typeof value === 'string';
+  };
+  
   // Check that if properties exist, they have the correct types
-  if ('email' in candidate && typeof candidate.email !== 'string' && candidate.email !== undefined) {
+  if ('email' in candidate && !isOptionalString(candidate.email)) {
     return false;
   }
-  if ('name' in candidate && typeof candidate.name !== 'string' && candidate.name !== undefined) {
+  if ('name' in candidate && !isOptionalString(candidate.name)) {
     return false;
   }
-  if ('profileImage' in candidate && typeof candidate.profileImage !== 'string' && candidate.profileImage !== undefined) {
+  if ('profileImage' in candidate && !isOptionalString(candidate.profileImage)) {
+    return false;
+  }
+  if ('aggregateVerifier' in candidate && !isOptionalString(candidate.aggregateVerifier)) {
+    return false;
+  }
+  if ('verifier' in candidate && !isOptionalString(candidate.verifier)) {
+    return false;
+  }
+  if ('verifierId' in candidate && !isOptionalString(candidate.verifierId)) {
+    return false;
+  }
+  if ('typeOfLogin' in candidate && !isOptionalString(candidate.typeOfLogin)) {
     return false;
   }
   
@@ -65,7 +82,7 @@ const LOGIN_PROVIDER_MAP: Record<string, typeof LOGIN_PROVIDER[keyof typeof LOGI
  * Handles cases where userInfo() might not be available, might throw errors,
  * or might return a Promise (for cross-platform compatibility).
  * 
- * @returns User info object or null if not available
+ * @returns User info object or null if not available or invalid
  */
 async function safeGetUserInfo(web3authInstance: Web3Auth | null): Promise<Web3AuthUserInfo | null> {
   if (!web3authInstance || typeof web3authInstance.userInfo !== 'function') {
@@ -75,7 +92,15 @@ async function safeGetUserInfo(web3authInstance: Web3Auth | null): Promise<Web3A
   try {
     const result = web3authInstance.userInfo();
     // Await the result to handle both synchronous and asynchronous return values
-    return await result;
+    const userInfo = await result;
+    
+    // Validate that the result matches our expected interface
+    if (!isWeb3AuthUserInfo(userInfo)) {
+      console.warn('User info returned from SDK does not match expected structure');
+      return null;
+    }
+    
+    return userInfo;
   } catch (error) {
     // This may occur when the SDK is not fully initialized yet
     console.warn('Could not retrieve user info (SDK may not be fully initialized):', error);
