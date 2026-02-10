@@ -28,10 +28,10 @@ interface Web3AuthUserInfo {
 }
 
 /**
- * Helper function to check if a value is a valid optional string
- * Handles undefined, null, or string values
+ * Helper function to check if a value is a valid nullable string
+ * Handles undefined, null, or string values (all valid for optional properties at runtime)
  */
-function isOptionalString(value: unknown): boolean {
+function isNullableString(value: unknown): boolean {
   return value === undefined || value === null || typeof value === 'string';
 }
 
@@ -54,7 +54,7 @@ function isWeb3AuthUserInfo(obj: unknown): obj is Web3AuthUserInfo {
   
   // Check that all properties have the correct types
   for (const prop of stringProperties) {
-    if (prop in candidate && !isOptionalString(candidate[prop])) {
+    if (prop in candidate && !isNullableString(candidate[prop])) {
       return false;
     }
   }
