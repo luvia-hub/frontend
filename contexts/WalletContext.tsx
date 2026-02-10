@@ -9,6 +9,22 @@ import { WEB3AUTH_CLIENT_ID, WEB3AUTH_NETWORK_TYPE, WEB3AUTH_REDIRECT_URL, WEB3A
 // Complete the auth session for Web3Auth
 WebBrowser.maybeCompleteAuthSession();
 
+// Adapter to make expo-secure-store compatible with Web3Auth's expected interface
+const secureStoreAdapter = {
+  getItemAsync: (key: string, options: any) => SecureStore.getItemAsync(key, options),
+  setItemAsync: (key: string, value: string, options: any) => SecureStore.setItemAsync(key, value, options),
+  deleteItemAsync: (key: string, options: any) => SecureStore.deleteItemAsync(key, options),
+};
+
+// Map of login provider names to Web3Auth LOGIN_PROVIDER enum values
+const LOGIN_PROVIDER_MAP: Record<string, typeof LOGIN_PROVIDER[keyof typeof LOGIN_PROVIDER]> = {
+  google: LOGIN_PROVIDER.GOOGLE,
+  apple: LOGIN_PROVIDER.APPLE,
+  twitter: LOGIN_PROVIDER.TWITTER,
+  discord: LOGIN_PROVIDER.DISCORD,
+  email_passwordless: LOGIN_PROVIDER.EMAIL_PASSWORDLESS,
+};
+
 export interface WalletState {
   address: string | null;
   isConnected: boolean;
@@ -59,7 +75,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
           config: { chainConfig },
         });
 
-        const web3AuthInstance = new Web3Auth(WebBrowser, SecureStore, {
+        const web3AuthInstance = new Web3Auth(WebBrowser, secureStoreAdapter as any, {
           clientId: WEB3AUTH_CLIENT_ID,
           network: WEB3AUTH_NETWORK_TYPE,
           redirectUrl: WEB3AUTH_REDIRECT_URL,
@@ -113,16 +129,8 @@ export function WalletProvider({ children }: WalletProviderProps) {
         throw new Error('Web3Auth not initialized');
       }
 
-      const loginProviderMap: Record<string, typeof LOGIN_PROVIDER[keyof typeof LOGIN_PROVIDER]> = {
-        google: LOGIN_PROVIDER.GOOGLE,
-        apple: LOGIN_PROVIDER.APPLE,
-        twitter: LOGIN_PROVIDER.TWITTER,
-        discord: LOGIN_PROVIDER.DISCORD,
-        email_passwordless: LOGIN_PROVIDER.EMAIL_PASSWORDLESS,
-      };
-
       await web3auth.login({
-        loginProvider: loginProviderMap[provider],
+        loginProvider: LOGIN_PROVIDER_MAP[provider],
       });
 
       if (!web3auth.provider) {
