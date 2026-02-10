@@ -8,6 +8,7 @@ export { default as OrderBook } from './OrderBook';
 export { default as RecentTrades } from './RecentTrades';
 export { default as LeverageSelector } from './LeverageSelector';
 export { default as SizeInput } from './SizeInput';
+export { default as PriceInput } from './PriceInput';
 export { default as ActionButtons } from './ActionButtons';
 export { useHyperliquidData } from './useHyperliquidData';
 export * from './types';

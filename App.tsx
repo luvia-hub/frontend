@@ -9,10 +9,12 @@ import TradingInterface from './components/TradingInterface';
 import ConnectSourcesScreen from './components/ConnectSourcesScreen';
 import MarketListScreen from './components/MarketListScreen';
 import ActivePositionsScreen from './components/ActivePositionsScreen';
+import WalletConnectScreen from './components/WalletConnectScreen';
+import { WalletProvider } from './contexts/WalletContext';
 
 type Tab = 'home' | 'trade' | 'earn' | 'wallet';
 
-export default function App() {
+function AppContent() {
   const [activeTab, setActiveTab] = useState<Tab>('home');
   const [showConnectSources, setShowConnectSources] = useState(false);
   const [showActivePositions, setShowActivePositions] = useState(false);
@@ -58,7 +60,7 @@ export default function App() {
         ) : activeTab === 'earn' ? (
           <CryptoPortfolioDashboard onConnectPress={() => setShowConnectSources(true)} />
         ) : (
-          <MarketListScreen onMarketPress={handleMarketPress} />
+          <WalletConnectScreen />
         )}
       </View>
 
@@ -169,6 +171,14 @@ export default function App() {
         </TouchableOpacity>
       </View>
     </SafeAreaView>
+  );
+}
+
+export default function App() {
+  return (
+    <WalletProvider>
+      <AppContent />
+    </WalletProvider>
   );
 }
 
