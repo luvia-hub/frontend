@@ -25,6 +25,27 @@ const LOGIN_PROVIDER_MAP: Record<string, typeof LOGIN_PROVIDER[keyof typeof LOGI
   email_passwordless: LOGIN_PROVIDER.EMAIL_PASSWORDLESS,
 };
 
+/**
+ * Safely retrieves user info from Web3Auth instance.
+ * Handles cases where userInfo() might not be available, might throw errors,
+ * or might return a Promise (for cross-platform compatibility).
+ */
+async function safeGetUserInfo(web3authInstance: Web3Auth | null): Promise<any | null> {
+  if (!web3authInstance || typeof web3authInstance.userInfo !== 'function') {
+    return null;
+  }
+
+  try {
+    const result = web3authInstance.userInfo();
+    // Handle both synchronous and asynchronous return values
+    // Use Promise.resolve to safely handle both cases
+    return await Promise.resolve(result);
+  } catch (error) {
+    console.warn('Failed to get user info:', error);
+    return null;
+  }
+}
+
 export interface WalletState {
   address: string | null;
   isConnected: boolean;
@@ -91,18 +112,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
           const ethersProvider = new ethers.BrowserProvider(web3AuthInstance.provider);
           const signer = await ethersProvider.getSigner();
           const address = await signer.getAddress();
-          
-          // Safely get user info - userInfo() might not be available yet or return null on Android
-          let userInfo = null;
-          try {
-            if (typeof web3AuthInstance.userInfo === 'function') {
-              const result = web3AuthInstance.userInfo();
-              // Handle both synchronous and asynchronous return values
-              userInfo = result instanceof Promise ? await result : result;
-            }
-          } catch (error) {
-            console.warn('Failed to get user info:', error);
-          }
+          const userInfo = await safeGetUserInfo(web3AuthInstance);
           
           setWalletState({
             address,
@@ -152,18 +162,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
       const ethersProvider = new ethers.BrowserProvider(web3auth.provider);
       const signer = await ethersProvider.getSigner();
       const address = await signer.getAddress();
-      
-      // Safely get user info - userInfo() might not be available yet or return null on Android
-      let userInfo = null;
-      try {
-        if (typeof web3auth.userInfo === 'function') {
-          const result = web3auth.userInfo();
-          // Handle both synchronous and asynchronous return values
-          userInfo = result instanceof Promise ? await result : result;
-        }
-      } catch (error) {
-        console.warn('Failed to get user info:', error);
-      }
+      const userInfo = await safeGetUserInfo(web3auth);
       
       setWalletState({
         address,
