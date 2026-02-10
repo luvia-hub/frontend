@@ -29,8 +29,26 @@ interface Web3AuthUserInfo {
 
 // Type guard for Web3AuthUserInfo
 function isWeb3AuthUserInfo(obj: unknown): obj is Web3AuthUserInfo {
-  return typeof obj === 'object' && obj !== null && 
-         ('email' in obj || 'name' in obj || 'profileImage' in obj);
+  if (typeof obj !== 'object' || obj === null) {
+    return false;
+  }
+  
+  const candidate = obj as Record<string, unknown>;
+  
+  // Check that if properties exist, they have the correct types
+  if ('email' in candidate && typeof candidate.email !== 'string' && candidate.email !== undefined) {
+    return false;
+  }
+  if ('name' in candidate && typeof candidate.name !== 'string' && candidate.name !== undefined) {
+    return false;
+  }
+  if ('profileImage' in candidate && typeof candidate.profileImage !== 'string' && candidate.profileImage !== undefined) {
+    return false;
+  }
+  
+  // At least one identifying property should be present
+  return 'email' in candidate || 'name' in candidate || 'profileImage' in candidate || 
+         'verifier' in candidate || 'verifierId' in candidate;
 }
 
 // Map of login provider names to Web3Auth LOGIN_PROVIDER enum values
