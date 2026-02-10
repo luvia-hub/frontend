@@ -10,6 +10,7 @@ import {
   RecentTrades,
   LeverageSelector,
   SizeInput,
+  PriceInput,
   ActionButtons,
   useHyperliquidData,
 } from './trading';
@@ -38,6 +39,7 @@ export default function TradingInterface({ selectedMarket }: TradingInterfacePro
   const [orderType, setOrderType] = useState<OrderType>('market');
   const [timeInterval, setTimeInterval] = useState<TimeInterval>('15m');
   const [size, setSize] = useState('0.5');
+  const [price, setPrice] = useState('');
   const [leverage, setLeverage] = useState(10);
   const [activeIndicators, setActiveIndicators] = useState<IndicatorType[]>(DEFAULT_ACTIVE_INDICATORS);
 
@@ -77,6 +79,7 @@ export default function TradingInterface({ selectedMarket }: TradingInterfacePro
   const handleTimeIntervalChange = useCallback((interval: TimeInterval) => setTimeInterval(interval), []);
   const handleLeverageChange = useCallback((value: number) => setLeverage(value), []);
   const handleSizeChange = useCallback((value: string) => setSize(value), []);
+  const handlePriceChange = useCallback((value: string) => setPrice(value), []);
   const handleToggleIndicator = useCallback((indicator: IndicatorType) => {
     setActiveIndicators((prev) =>
       prev.includes(indicator)
@@ -162,6 +165,15 @@ export default function TradingInterface({ selectedMarket }: TradingInterfacePro
         onLeverageChange={handleLeverageChange}
       />
 
+      {(orderType === 'limit' || orderType === 'stop') && (
+        <PriceInput
+          price={price}
+          onPriceChange={handlePriceChange}
+          label={orderType === 'limit' ? 'Limit Price' : 'Stop Price'}
+          markPrice={markPrice}
+        />
+      )}
+
       <SizeInput
         size={size}
         onSizeChange={handleSizeChange}
@@ -169,7 +181,14 @@ export default function TradingInterface({ selectedMarket }: TradingInterfacePro
         fee={fee}
       />
 
-      <ActionButtons markPrice={markPrice} />
+      <ActionButtons 
+        markPrice={markPrice}
+        orderType={orderType}
+        size={size}
+        price={price}
+        leverage={leverage}
+        selectedPair={selectedPair}
+      />
     </ScrollView>
   );
 }
