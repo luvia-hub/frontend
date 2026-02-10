@@ -1,14 +1,33 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { Wallet, LogOut } from 'lucide-react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { Wallet, LogOut, Mail } from 'lucide-react-native';
 import { useWallet } from '../contexts/WalletContext';
 
 export default function WalletConnectScreen() {
   const [privateKey, setPrivateKey] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
+  const [showPrivateKeyLogin, setShowPrivateKeyLogin] = useState(false);
   const wallet = useWallet();
 
-  const handleConnect = async () => {
+  const handleWeb3AuthLogin = async (provider: 'google' | 'apple' | 'twitter' | 'discord' | 'email_passwordless') => {
+    if (!wallet.isInitialized) {
+      Alert.alert('Please Wait', 'Web3Auth is still initializing...');
+      return;
+    }
+
+    setIsConnecting(true);
+    try {
+      await wallet.connect(provider);
+      Alert.alert('Success', 'Wallet connected successfully!');
+    } catch (error) {
+      console.error('Failed to connect wallet:', error);
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to connect wallet');
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  const handlePrivateKeyConnect = async () => {
     if (!privateKey.trim()) {
       Alert.alert('Error', 'Please enter a private key');
       return;
@@ -16,9 +35,10 @@ export default function WalletConnectScreen() {
 
     setIsConnecting(true);
     try {
-      await wallet.connect(privateKey);
+      await wallet.connect('privatekey', privateKey);
       Alert.alert('Success', 'Wallet connected successfully!');
       setPrivateKey('');
+      setShowPrivateKeyLogin(false);
     } catch (error) {
       console.error('Failed to connect wallet:', error);
       Alert.alert('Error', error instanceof Error ? error.message : 'Failed to connect wallet');
@@ -31,6 +51,17 @@ export default function WalletConnectScreen() {
     wallet.disconnect();
     Alert.alert('Success', 'Wallet disconnected');
   };
+
+  if (!wallet.isInitialized) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#3B82F6" />
+          <Text style={styles.loadingText}>Initializing Web3Auth...</Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -46,6 +77,15 @@ export default function WalletConnectScreen() {
                 <Text style={styles.connectedText}>Connected</Text>
               </View>
             </View>
+
+            {wallet.userInfo && (
+              <View style={styles.userInfoContainer}>
+                <Text style={styles.userInfoLabel}>Logged in as</Text>
+                <Text style={styles.userInfoText}>
+                  {wallet.userInfo.email || wallet.userInfo.name || 'Web3Auth User'}
+                </Text>
+              </View>
+            )}
 
             <View style={styles.addressContainer}>
               <Text style={styles.addressLabel}>Address</Text>
@@ -73,45 +113,138 @@ export default function WalletConnectScreen() {
           <View style={styles.header}>
             <Text style={styles.title}>Connect Wallet</Text>
             <Text style={styles.subtitle}>
-              Enter your private key to connect your wallet and start trading on Hyperliquid
+              Choose your preferred login method to start trading on Hyperliquid
             </Text>
           </View>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Private Key</Text>
-            <TextInput
-              style={styles.input}
-              value={privateKey}
-              onChangeText={setPrivateKey}
-              placeholder="0x..."
-              placeholderTextColor="#4B5563"
-              secureTextEntry
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            <Text style={styles.inputHint}>
-              ⚠️ Never share your private key. Store it securely.
-            </Text>
-          </View>
+          {!showPrivateKeyLogin ? (
+            <>
+              <View style={styles.providersContainer}>
+                <Text style={styles.sectionTitle}>Social Login</Text>
+                
+                <TouchableOpacity
+                  style={[styles.providerButton, styles.googleButton]}
+                  onPress={() => handleWeb3AuthLogin('google')}
+                  disabled={isConnecting}
+                >
+                  <View style={styles.providerIcon}>
+                    <Text style={styles.providerEmoji}>🔍</Text>
+                  </View>
+                  <Text style={styles.providerButtonText}>Continue with Google</Text>
+                </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.connectButton, isConnecting && styles.connectButtonDisabled]}
-            onPress={handleConnect}
-            disabled={isConnecting}
-          >
-            <Wallet size={20} color="#FFFFFF" />
-            <Text style={styles.connectButtonText}>
-              {isConnecting ? 'Connecting...' : 'Connect Wallet'}
-            </Text>
-          </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.providerButton, styles.appleButton]}
+                  onPress={() => handleWeb3AuthLogin('apple')}
+                  disabled={isConnecting}
+                >
+                  <View style={styles.providerIcon}>
+                    <Text style={styles.providerEmoji}>🍎</Text>
+                  </View>
+                  <Text style={styles.providerButtonText}>Continue with Apple</Text>
+                </TouchableOpacity>
 
-          <View style={styles.warningCard}>
-            <Text style={styles.warningTitle}>🔒 Security Notice</Text>
-            <Text style={styles.warningText}>
-              This is a demo app. In production, use proper wallet integration (MetaMask, WalletConnect) 
-              instead of directly entering private keys.
-            </Text>
-          </View>
+                <TouchableOpacity
+                  style={[styles.providerButton, styles.twitterButton]}
+                  onPress={() => handleWeb3AuthLogin('twitter')}
+                  disabled={isConnecting}
+                >
+                  <View style={styles.providerIcon}>
+                    <Text style={styles.providerEmoji}>🐦</Text>
+                  </View>
+                  <Text style={styles.providerButtonText}>Continue with Twitter</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.providerButton, styles.discordButton]}
+                  onPress={() => handleWeb3AuthLogin('discord')}
+                  disabled={isConnecting}
+                >
+                  <View style={styles.providerIcon}>
+                    <Text style={styles.providerEmoji}>💬</Text>
+                  </View>
+                  <Text style={styles.providerButtonText}>Continue with Discord</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.providerButton, styles.emailButton]}
+                  onPress={() => handleWeb3AuthLogin('email_passwordless')}
+                  disabled={isConnecting}
+                >
+                  <Mail size={20} color="#FFFFFF" />
+                  <Text style={styles.providerButtonText}>Continue with Email</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.divider}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>OR</Text>
+                <View style={styles.dividerLine} />
+              </View>
+
+              <TouchableOpacity
+                style={styles.legacyButton}
+                onPress={() => setShowPrivateKeyLogin(true)}
+              >
+                <Text style={styles.legacyButtonText}>Use Private Key (Advanced)</Text>
+              </TouchableOpacity>
+
+              <View style={styles.featureCard}>
+                <Text style={styles.featureTitle}>🔒 Why Web3Auth?</Text>
+                <Text style={styles.featureText}>
+                  • Non-custodial: You own your keys{'\n'}
+                  • Secure: Enterprise-grade MPC encryption{'\n'}
+                  • Easy recovery: Never lose access to your wallet{'\n'}
+                  • No passwords: Login with your existing accounts
+                </Text>
+              </View>
+            </>
+          ) : (
+            <>
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => setShowPrivateKeyLogin(false)}
+              >
+                <Text style={styles.backButtonText}>← Back to Social Login</Text>
+              </TouchableOpacity>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Private Key</Text>
+                <TextInput
+                  style={styles.input}
+                  value={privateKey}
+                  onChangeText={setPrivateKey}
+                  placeholder="0x..."
+                  placeholderTextColor="#4B5563"
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+                <Text style={styles.inputHint}>
+                  ⚠️ Never share your private key. Store it securely.
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                style={[styles.connectButton, isConnecting && styles.connectButtonDisabled]}
+                onPress={handlePrivateKeyConnect}
+                disabled={isConnecting}
+              >
+                <Wallet size={20} color="#FFFFFF" />
+                <Text style={styles.connectButtonText}>
+                  {isConnecting ? 'Connecting...' : 'Connect Wallet'}
+                </Text>
+              </TouchableOpacity>
+
+              <View style={styles.warningCard}>
+                <Text style={styles.warningTitle}>🔒 Security Notice</Text>
+                <Text style={styles.warningText}>
+                  Private key login is for advanced users only. For better security and ease of use, 
+                  we recommend using Web3Auth social login instead.
+                </Text>
+              </View>
+            </>
+          )}
         </View>
       )}
     </View>
@@ -123,6 +256,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0A0E17',
     padding: 16,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+  },
+  loadingText: {
+    color: '#9CA3AF',
+    fontSize: 16,
   },
   connectedContainer: {
     flex: 1,
@@ -168,6 +311,25 @@ const styles = StyleSheet.create({
     color: '#22C55E',
     fontSize: 14,
     fontWeight: '700',
+  },
+  userInfoContainer: {
+    marginBottom: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1E293B',
+  },
+  userInfoLabel: {
+    color: '#9CA3AF',
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  userInfoText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
   addressContainer: {
     marginBottom: 24,
@@ -238,6 +400,111 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
     fontSize: 16,
     lineHeight: 24,
+  },
+  sectionTitle: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 16,
+  },
+  providersContainer: {
+    gap: 12,
+  },
+  providerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#141926',
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderWidth: 1,
+    borderColor: '#1E293B',
+  },
+  googleButton: {
+    borderColor: '#4285F4',
+  },
+  appleButton: {
+    borderColor: '#FFFFFF20',
+  },
+  twitterButton: {
+    borderColor: '#1DA1F2',
+  },
+  discordButton: {
+    borderColor: '#5865F2',
+  },
+  emailButton: {
+    borderColor: '#F59E0B',
+  },
+  providerIcon: {
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  providerEmoji: {
+    fontSize: 20,
+  },
+  providerButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    flex: 1,
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#1E293B',
+  },
+  dividerText: {
+    color: '#6B7280',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  legacyButton: {
+    backgroundColor: 'transparent',
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#1E293B',
+  },
+  legacyButtonText: {
+    color: '#9CA3AF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  backButton: {
+    backgroundColor: 'transparent',
+    paddingVertical: 8,
+  },
+  backButtonText: {
+    color: '#3B82F6',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  featureCard: {
+    backgroundColor: '#22C55E10',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#22C55E30',
+  },
+  featureTitle: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  featureText: {
+    color: '#9CA3AF',
+    fontSize: 13,
+    lineHeight: 20,
   },
   inputContainer: {
     gap: 8,
