@@ -2,19 +2,24 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Settings, Maximize2 } from 'lucide-react-native';
 import KLineChartWebView from '../KLineChartWebView';
-import type { CandleData, TimeInterval } from './types';
+import IndicatorToggleList from './IndicatorToggleList';
+import type { CandleData, TimeInterval, IndicatorType } from './types';
 import { TIME_INTERVALS } from './types';
 
 interface TimeIntervalBarProps {
     timeInterval: TimeInterval;
     onTimeIntervalChange: (interval: TimeInterval) => void;
     chartData: CandleData[];
+    activeIndicators: IndicatorType[];
+    onToggleIndicator: (indicator: IndicatorType) => void;
 }
 
 function TimeIntervalBar({
     timeInterval,
     onTimeIntervalChange,
     chartData,
+    activeIndicators,
+    onToggleIndicator,
 }: TimeIntervalBarProps) {
     return (
         <View style={styles.chartSection}>
@@ -48,11 +53,17 @@ function TimeIntervalBar({
                 </View>
             </View>
 
+            <IndicatorToggleList
+                activeIndicators={activeIndicators}
+                onToggleIndicator={onToggleIndicator}
+            />
+
             <KLineChartWebView
                 data={chartData}
                 height={300}
                 theme="dark"
                 interval={timeInterval}
+                activeIndicators={activeIndicators}
             />
         </View>
     );

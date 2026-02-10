@@ -27,6 +27,7 @@ interface KLineChartWebViewProps {
   height?: number;
   theme?: 'dark' | 'light';
   interval?: string;
+  activeIndicators?: string[];
   onCrosshairChange?: (data: CrosshairData | null) => void;
 }
 
@@ -36,6 +37,7 @@ export default function KLineChartWebView({
   height = 300,
   theme = 'dark',
   interval = '15m',
+  activeIndicators = [],
   onCrosshairChange,
 }: KLineChartWebViewProps) {
   const webViewRef = useRef<WebView>(null);
@@ -50,10 +52,21 @@ export default function KLineChartWebView({
     }
   }, [data]);
 
+  useEffect(() => {
+    if (webViewRef.current) {
+      const indicatorsString = JSON.stringify(activeIndicators);
+      const script = `window.syncIndicators && window.syncIndicators(${indicatorsString}); true;`;
+      webViewRef.current.injectJavaScript(script);
+    }
+  }, [activeIndicators]);
+
   const handleMessage = (event: WebViewMessageEvent) => {
     try {
       const message = JSON.parse(event.nativeEvent.data);
       if (message.type === 'ready') {
+        // Sync indicators on chart ready
+        const indicatorsString = JSON.stringify(activeIndicators);
+        webViewRef.current?.injectJavaScript(`window.syncIndicators && window.syncIndicators(${indicatorsString}); true;`);
         if (data.length > 0) {
           const dataString = JSON.stringify(data);
           const script = `window.updateChartData(${dataString}); true;`;
@@ -335,11 +348,7 @@ export default function KLineChartWebView({
           },
         });
 
-        // Create main pane with MA indicator
-        chart.createIndicator('MA', false, { id: 'candle_pane' });
-
-        // Create volume pane
-        chart.createIndicator('VOL', false, { height: 80 });
+        // Indicators will be synced via window.syncIndicators after 'ready' message
 
         // Subscribe to crosshair events
         chart.subscribeAction('onCrosshairChange', (data) => {
@@ -366,11 +375,49 @@ export default function KLineChartWebView({
       }
     }
 
+    // Main-pane indicators overlay on candle_pane; sub-pane indicators get their own pane
+    var MAIN_INDICATORS = ['MA', 'EMA', 'BOLL'];
+    var activeSubPanes = {}; // name -> paneId
+
+    window.syncIndicators = function(indicators) {
+      if (!chart) { log('syncIndicators: chart not ready'); return; }
+      try {
+        var desired = {};
+        for (var i = 0; i < indicators.length; i++) { desired[indicators[i]] = true; }
+
+        // Remove indicators that are no longer active
+        var allKnown = ['MA','EMA','BOLL','RSI','MACD','VOL','KDJ'];
+        for (var j = 0; j < allKnown.length; j++) {
+          var name = allKnown[j];
+          if (!desired[name]) {
+            if (MAIN_INDICATORS.indexOf(name) >= 0) {
+              chart.removeIndicator('candle_pane', name);
+            } else if (activeSubPanes[name]) {
+              chart.removeIndicator(activeSubPanes[name], name);
+              delete activeSubPanes[name];
+            }
+          }
+        }
+
+        // Add indicators that are newly active
+        for (var k = 0; k < indicators.length; k++) {
+          var ind = indicators[k];
+          if (MAIN_INDICATORS.indexOf(ind) >= 0) {
+            chart.createIndicator(ind, false, { id: 'candle_pane' });
+          } else if (!activeSubPanes[ind]) {
+            var paneId = chart.createIndicator(ind, false, { height: 80 });
+            if (paneId) { activeSubPanes[ind] = paneId; }
+          }
+        }
+      } catch (e) {
+        log('Error syncing indicators: ' + e.message);
+      }
+    };
+
     window.updateChartData = function(data) {
       if (chart && Array.isArray(data)) {
         try {
           chart.applyNewData(data);
-          // log('chart data updated: ' + data.length + ' points');
         } catch (e) {
           log('Error updating chart data: ' + e.message);
         }

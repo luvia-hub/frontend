@@ -13,8 +13,8 @@ import {
   ActionButtons,
   useHyperliquidData,
 } from './trading';
-import type { TabType, OrderType, TimeInterval } from './trading';
-import { DEFAULT_PAIR, MAX_ORDER_LEVELS } from './trading';
+import type { TabType, OrderType, TimeInterval, IndicatorType } from './trading';
+import { DEFAULT_PAIR, MAX_ORDER_LEVELS, DEFAULT_ACTIVE_INDICATORS } from './trading';
 
 // Tab definitions (stable references)
 const CONTENT_TABS: { key: TabType; label: string }[] = [
@@ -39,6 +39,7 @@ export default function TradingInterface({ selectedMarket }: TradingInterfacePro
   const [timeInterval, setTimeInterval] = useState<TimeInterval>('15m');
   const [size, setSize] = useState('0.5');
   const [leverage, setLeverage] = useState(10);
+  const [activeIndicators, setActiveIndicators] = useState<IndicatorType[]>(DEFAULT_ACTIVE_INDICATORS);
 
   const selectedPair = selectedMarket ?? DEFAULT_PAIR;
   const pairLabel = `${selectedPair}/USD`;
@@ -76,6 +77,13 @@ export default function TradingInterface({ selectedMarket }: TradingInterfacePro
   const handleTimeIntervalChange = useCallback((interval: TimeInterval) => setTimeInterval(interval), []);
   const handleLeverageChange = useCallback((value: number) => setLeverage(value), []);
   const handleSizeChange = useCallback((value: string) => setSize(value), []);
+  const handleToggleIndicator = useCallback((indicator: IndicatorType) => {
+    setActiveIndicators((prev) =>
+      prev.includes(indicator)
+        ? prev.filter((i) => i !== indicator)
+        : [...prev, indicator]
+    );
+  }, []);
 
   // Available balance trailing element for order type tab bar
   const availableTrailing = useMemo(
@@ -111,6 +119,8 @@ export default function TradingInterface({ selectedMarket }: TradingInterfacePro
         timeInterval={timeInterval}
         onTimeIntervalChange={handleTimeIntervalChange}
         chartData={chartData}
+        activeIndicators={activeIndicators}
+        onToggleIndicator={handleToggleIndicator}
       />
 
       <TabBar

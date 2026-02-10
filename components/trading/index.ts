@@ -3,6 +3,7 @@ export { default as PriceStats } from './PriceStats';
 export { default as ConnectionBanner } from './ConnectionBanner';
 export { default as TabBar } from './TabBar';
 export { default as TimeIntervalBar } from './TimeIntervalBar';
+export { default as IndicatorToggleList } from './IndicatorToggleList';
 export { default as OrderBook } from './OrderBook';
 export { default as RecentTrades } from './RecentTrades';
 export { default as LeverageSelector } from './LeverageSelector';
