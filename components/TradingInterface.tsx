@@ -47,14 +47,19 @@ export default function TradingInterface({ selectedMarket }: TradingInterfacePro
   // Load saved indicators on mount
   useEffect(() => {
     loadActiveIndicators().then((saved) => {
-      if (saved && saved.length >= 0) {
+      if (saved !== null) {
         setActiveIndicators(saved);
       }
     });
   }, []);
 
-  // Save indicators when they change
+  // Save indicators when they change (skip initial render)
+  const isInitialMount = React.useRef(true);
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
     saveActiveIndicators(activeIndicators);
   }, [activeIndicators]);
 
