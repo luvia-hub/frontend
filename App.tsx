@@ -9,6 +9,7 @@ import TradingInterface from './components/TradingInterface';
 import ConnectSourcesScreen from './components/ConnectSourcesScreen';
 import MarketListScreen from './components/MarketListScreen';
 import ActivePositionsScreen from './components/ActivePositionsScreen';
+import WalletConnectScreen from './components/WalletConnectScreen';
 import { WalletProvider } from './contexts/WalletContext';
 
 type Tab = 'home' | 'trade' | 'earn' | 'wallet';
@@ -59,7 +60,7 @@ function AppContent() {
         ) : activeTab === 'earn' ? (
           <CryptoPortfolioDashboard onConnectPress={() => setShowConnectSources(true)} />
         ) : (
-          <MarketListScreen onMarketPress={handleMarketPress} />
+          <WalletConnectScreen />
         )}
       </View>
 
