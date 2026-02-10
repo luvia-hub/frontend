@@ -166,8 +166,13 @@ const MarketRow = React.memo(function MarketRow({ market, onPress }: MarketRowPr
   );
 });
 
+interface MarketSelection {
+  symbol: string;
+  name: string;
+}
+
 interface MarketListScreenProps {
-  onMarketPress?: (market: { symbol: string; name: string }) => void;
+  onMarketPress?: (market: MarketSelection) => void;
 }
 
 export default function MarketListScreen({ onMarketPress }: MarketListScreenProps) {
