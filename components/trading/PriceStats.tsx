@@ -1,0 +1,53 @@
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+
+interface PriceStatsProps {
+    markPrice: number;
+    indexPrice: number;
+    volume24h: number;
+}
+
+function PriceStats({ markPrice, indexPrice, volume24h }: PriceStatsProps) {
+    return (
+        <View style={styles.priceStats}>
+            <View style={styles.statItem}>
+                <Text style={styles.statLabel}>MARK PRICE</Text>
+                <Text style={styles.statValue}>${markPrice.toLocaleString()}</Text>
+            </View>
+            <View style={styles.statItem}>
+                <Text style={styles.statLabel}>INDEX PRICE</Text>
+                <Text style={styles.statValue}>${indexPrice.toLocaleString()}</Text>
+            </View>
+            <View style={styles.statItem}>
+                <Text style={styles.statLabel}>24H VOL</Text>
+                <Text style={styles.statValue}>${volume24h.toFixed(1)}B</Text>
+            </View>
+        </View>
+    );
+}
+
+export default React.memo(PriceStats);
+
+const styles = StyleSheet.create({
+    priceStats: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        backgroundColor: '#0A0E17',
+    },
+    statItem: {
+        alignItems: 'center',
+    },
+    statLabel: {
+        color: '#6B7280',
+        fontSize: 11,
+        fontWeight: '600',
+        marginBottom: 4,
+    },
+    statValue: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: '700',
+    },
+});
