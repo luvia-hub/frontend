@@ -40,6 +40,28 @@ function ActionButtons({ markPrice, orderType, size, price, leverage, selectedPa
         setShowConfirmation(true);
     };
 
+    const checkOrderResponse = (response: any): { success: boolean; message: string } => {
+        if (!response) {
+            return { success: false, message: 'No response from server' };
+        }
+
+        if (response.status === 'ok') {
+            return { success: true, message: 'Order placed successfully!' };
+        }
+
+        if (response.response?.data?.statuses) {
+            const firstStatus = response.response.data.statuses[0];
+            if ('error' in firstStatus && firstStatus.error) {
+                return { success: false, message: firstStatus.error };
+            }
+            if ('filled' in firstStatus || 'resting' in firstStatus) {
+                return { success: true, message: 'Order placed successfully!' };
+            }
+        }
+
+        return { success: false, message: 'Failed to place order' };
+    };
+
     const handleConfirmOrder = async () => {
         if (!wallet.signer) {
             Alert.alert('Error', 'Wallet signer not available.');
@@ -68,6 +90,10 @@ function ActionButtons({ markPrice, orderType, size, price, leverage, selectedPa
             if (orderType === 'limit') {
                 orderRequest.orderType.limit = { tif: 'Gtc' };
             } else if (orderType === 'stop') {
+                // For stop orders, the tpsl determines trigger direction
+                // 'tp' = trigger when price goes above triggerPx (take profit for shorts, stop entry for longs)
+                // 'sl' = trigger when price goes below triggerPx (stop loss for longs, take profit entry for shorts)
+                // Using 'sl' for buy (long stop loss) and 'tp' for sell (short take profit)
                 orderRequest.orderType.trigger = {
                     triggerPx: orderPrice,
                     isMarket: false,
@@ -80,24 +106,13 @@ function ActionButtons({ markPrice, orderType, size, price, leverage, selectedPa
 
             const response = await placeOrder(wallet.signer, orderRequest);
 
-            // Check if the response indicates success
-            // The @far1s/hyperliquid library returns different response structures
-            if (response && response.status === 'ok') {
-                Alert.alert('Success', 'Order placed successfully!');
+            const { success, message } = checkOrderResponse(response);
+            
+            if (success) {
+                Alert.alert('Success', message);
                 setShowConfirmation(false);
-            } else if (response && response.response?.data?.statuses) {
-                // Check individual order statuses
-                const firstStatus = response.response.data.statuses[0];
-                if ('error' in firstStatus && firstStatus.error) {
-                    Alert.alert('Error', firstStatus.error);
-                } else if ('filled' in firstStatus || 'resting' in firstStatus) {
-                    Alert.alert('Success', 'Order placed successfully!');
-                    setShowConfirmation(false);
-                } else {
-                    Alert.alert('Error', 'Unknown order status');
-                }
             } else {
-                Alert.alert('Error', 'Failed to place order');
+                Alert.alert('Error', message);
             }
         } catch (error) {
             console.error('Order placement error:', error);

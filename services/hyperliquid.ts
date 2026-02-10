@@ -71,13 +71,15 @@ export async function placeOrder(
           r: order.reduceOnly,
           t: order.orderType.limit
             ? { limit: { tif: order.orderType.limit.tif } }
-            : {
+            : order.orderType.trigger
+            ? {
                 trigger: {
-                  isMarket: order.orderType.trigger!.isMarket,
-                  triggerPx: floatToWire(order.orderType.trigger!.triggerPx),
-                  tpsl: order.orderType.trigger!.tpsl,
+                  isMarket: order.orderType.trigger.isMarket,
+                  triggerPx: floatToWire(order.orderType.trigger.triggerPx),
+                  tpsl: order.orderType.trigger.tpsl,
                 },
-              },
+              }
+            : { limit: { tif: 'Gtc' } }, // fallback
         },
       ],
       grouping: 'na',
