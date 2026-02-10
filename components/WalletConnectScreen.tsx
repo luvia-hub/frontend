@@ -82,10 +82,7 @@ export default function WalletConnectScreen() {
               <View style={styles.userInfoContainer}>
                 <Text style={styles.userInfoLabel}>Logged in as</Text>
                 <Text style={styles.userInfoText}>
-                  {typeof wallet.userInfo === 'object' && wallet.userInfo !== null && 
-                   ('email' in wallet.userInfo || 'name' in wallet.userInfo)
-                    ? (wallet.userInfo as any).email || (wallet.userInfo as any).name || 'Web3Auth User'
-                    : 'Web3Auth User'}
+                  {wallet.userInfo.email || wallet.userInfo.name || 'Web3Auth User'}
                 </Text>
               </View>
             )}

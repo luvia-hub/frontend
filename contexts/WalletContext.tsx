@@ -16,6 +16,23 @@ const secureStoreAdapter = {
   deleteItemAsync: (key: string, options: any) => SecureStore.deleteItemAsync(key, options),
 };
 
+// Web3Auth user info interface
+interface Web3AuthUserInfo {
+  email?: string;
+  name?: string;
+  profileImage?: string;
+  aggregateVerifier?: string;
+  verifier?: string;
+  verifierId?: string;
+  typeOfLogin?: string;
+}
+
+// Type guard for Web3AuthUserInfo
+function isWeb3AuthUserInfo(obj: unknown): obj is Web3AuthUserInfo {
+  return typeof obj === 'object' && obj !== null && 
+         ('email' in obj || 'name' in obj || 'profileImage' in obj);
+}
+
 // Map of login provider names to Web3Auth LOGIN_PROVIDER enum values
 const LOGIN_PROVIDER_MAP: Record<string, typeof LOGIN_PROVIDER[keyof typeof LOGIN_PROVIDER]> = {
   google: LOGIN_PROVIDER.GOOGLE,
@@ -32,16 +49,15 @@ const LOGIN_PROVIDER_MAP: Record<string, typeof LOGIN_PROVIDER[keyof typeof LOGI
  * 
  * @returns User info object or null if not available
  */
-async function safeGetUserInfo(web3authInstance: Web3Auth | null): Promise<unknown> {
+async function safeGetUserInfo(web3authInstance: Web3Auth | null): Promise<Web3AuthUserInfo | null> {
   if (!web3authInstance || typeof web3authInstance.userInfo !== 'function') {
     return null;
   }
 
   try {
     const result = web3authInstance.userInfo();
-    // Handle both synchronous and asynchronous return values
-    // Use Promise.resolve to safely handle both cases
-    return await Promise.resolve(result);
+    // Await the result to handle both synchronous and asynchronous return values
+    return await result;
   } catch (error) {
     // This may occur when the SDK is not fully initialized yet
     console.warn('Could not retrieve user info (SDK may not be fully initialized):', error);
@@ -53,7 +69,7 @@ export interface WalletState {
   address: string | null;
   isConnected: boolean;
   signer: ethers.Signer | null;
-  userInfo: unknown;
+  userInfo: Web3AuthUserInfo | null;
 }
 
 type LoginProvider = 'google' | 'apple' | 'twitter' | 'discord' | 'email_passwordless' | 'privatekey';
