@@ -13,10 +13,11 @@ import {
   Settings,
   Maximize2,
 } from 'lucide-react-native';
+import KLineChartWebView from './KLineChartWebView';
 
 type TabType = 'orderBook' | 'recentTrades' | 'info';
 type OrderType = 'market' | 'limit' | 'stop';
-type TimeInterval = '15m' | '1h' | '4h' | '1d';
+type TimeInterval = '1m' | '5m' | '15m' | '1h' | '4h' | '1D';
 type ConnectionState = 'loading' | 'open' | 'error';
 type TradeSide = 'buy' | 'sell';
 
@@ -37,6 +38,15 @@ type Trade = {
   size: number;
   side: TradeSide;
   timestamp: number;
+};
+
+type CandleData = {
+  timestamp: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume?: number;
 };
 
 // Constants
@@ -160,9 +170,10 @@ export default function TradingInterface({ selectedMarket }: TradingInterfacePro
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [orderBook, setOrderBook] = useState<OrderBookState | null>(null);
   const [recentTrades, setRecentTrades] = useState<Trade[]>([]);
+  const [chartData, setChartData] = useState<CandleData[]>([]);
 
   const leveragePresets = [1, 10, 20, 50, 100];
-  const timeIntervals: TimeInterval[] = ['15m', '1h', '4h', '1d'];
+  const timeIntervals: TimeInterval[] = ['1m', '5m', '15m', '1h', '4h', '1D'];
 
   const baseMarkPrice = 64230.5;
   const indexPrice = 64215.1;
@@ -209,6 +220,12 @@ export default function TradingInterface({ selectedMarket }: TradingInterfacePro
         JSON.stringify({
           method: 'subscribe',
           subscription: { type: 'trades', coin: selectedPair },
+        }),
+      );
+      websocket.send(
+        JSON.stringify({
+          method: 'subscribe',
+          subscription: { type: 'candle', coin: selectedPair, interval: timeInterval },
         }),
       );
     };
@@ -260,6 +277,34 @@ export default function TradingInterface({ selectedMarket }: TradingInterfacePro
             });
           }
         }
+
+        if (channel === 'candle') {
+          const candlePayload = payload.data;
+          if (candlePayload && typeof candlePayload === 'object') {
+            const candleObj = candlePayload as Record<string, unknown>;
+            const newCandle: CandleData = {
+              timestamp: toNumber(candleObj.t ?? candleObj.timestamp ?? Date.now()),
+              open: toNumber(candleObj.o ?? candleObj.open),
+              high: toNumber(candleObj.h ?? candleObj.high),
+              low: toNumber(candleObj.l ?? candleObj.low),
+              close: toNumber(candleObj.c ?? candleObj.close),
+              volume: toNumber(candleObj.v ?? candleObj.volume),
+            };
+
+            setChartData((prev) => {
+              const lastCandle = prev[prev.length - 1];
+              // If timestamp matches last candle (within 60s), update existing candle
+              if (lastCandle && Math.abs(lastCandle.timestamp - newCandle.timestamp) < 60000) {
+                const updated = [...prev];
+                updated[updated.length - 1] = newCandle;
+                return updated;
+              }
+              // Otherwise, append new candle and maintain last 100
+              const updated = [...prev, newCandle];
+              return updated.slice(-100);
+            });
+          }
+        }
       } catch (error) {
         console.warn('Failed to parse Hyperliquid WebSocket message', error);
       }
@@ -269,20 +314,7 @@ export default function TradingInterface({ selectedMarket }: TradingInterfacePro
       isMounted = false;
       websocket.close();
     };
-  }, [selectedPair]);
-
-  // Mock candlestick chart data (simplified representation)
-  const chartData = [
-    { open: 62000, close: 63500, high: 64000, low: 61500 },
-    { open: 63500, close: 62800, high: 64200, low: 62300 },
-    { open: 62800, close: 63200, high: 63800, low: 62500 },
-    { open: 63200, close: 64100, high: 64500, low: 63000 },
-    { open: 64100, close: 63800, high: 64800, low: 63500 },
-    { open: 63800, close: 64500, high: 65000, low: 63600 },
-    { open: 64500, close: 64000, high: 64900, low: 63800 },
-    { open: 64000, close: 64800, high: 65200, low: 63900 },
-    { open: 64800, close: 64230, high: 65100, low: 64100 },
-  ];
+  }, [selectedPair, timeInterval]);
 
   return (
     <ScrollView
@@ -372,50 +404,12 @@ export default function TradingInterface({ selectedMarket }: TradingInterfacePro
         </View>
 
         {/* Candlestick Chart */}
-        <View style={styles.chartContainer}>
-          <View style={styles.chartGrid}>
-            {chartData.map((candle, index) => {
-              const isGreen = candle.close > candle.open;
-              const height = Math.abs(candle.close - candle.open) / 100;
-              const wickHeight = (candle.high - candle.low) / 100;
-              const bottom = Math.min(candle.open, candle.close) / 400;
-              
-              return (
-                <View key={index} style={styles.candleWrapper}>
-                  <View
-                    style={[
-                      styles.candleWick,
-                      {
-                        height: wickHeight,
-                        bottom: candle.low / 400,
-                        backgroundColor: isGreen ? '#22C55E' : '#EF4444',
-                      },
-                    ]}
-                  />
-                  <View
-                    style={[
-                      styles.candleBody,
-                      {
-                        height: Math.max(height, 2),
-                        bottom,
-                        backgroundColor: isGreen ? '#22C55E' : '#EF4444',
-                      },
-                    ]}
-                  />
-                </View>
-              );
-            })}
-          </View>
-          {/* Current Price Indicator */}
-          <View style={styles.priceIndicator}>
-            <View style={styles.priceIndicatorLine} />
-            <View style={styles.priceIndicatorLabel}>
-              <Text style={styles.priceIndicatorText}>{markPrice.toFixed(1)}</Text>
-            </View>
-          </View>
-          {/* Moving Average Line */}
-          <View style={styles.movingAverage} />
-        </View>
+        <KLineChartWebView
+          data={chartData}
+          height={300}
+          theme="dark"
+          interval={timeInterval}
+        />
       </View>
 
       {/* Tab Navigation */}
