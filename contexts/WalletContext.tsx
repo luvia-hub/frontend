@@ -92,11 +92,21 @@ export function WalletProvider({ children }: WalletProviderProps) {
           const signer = await ethersProvider.getSigner();
           const address = await signer.getAddress();
           
+          // Safely get user info - userInfo() might not be available yet or return null on Android
+          let userInfo = null;
+          try {
+            if (typeof web3AuthInstance.userInfo === 'function') {
+              userInfo = web3AuthInstance.userInfo();
+            }
+          } catch (error) {
+            console.warn('Failed to get user info:', error);
+          }
+          
           setWalletState({
             address,
             isConnected: true,
             signer,
-            userInfo: web3AuthInstance.userInfo(),
+            userInfo,
           });
         }
       } catch (error) {
@@ -141,11 +151,21 @@ export function WalletProvider({ children }: WalletProviderProps) {
       const signer = await ethersProvider.getSigner();
       const address = await signer.getAddress();
       
+      // Safely get user info - userInfo() might not be available yet or return null on Android
+      let userInfo = null;
+      try {
+        if (typeof web3auth.userInfo === 'function') {
+          userInfo = web3auth.userInfo();
+        }
+      } catch (error) {
+        console.warn('Failed to get user info:', error);
+      }
+      
       setWalletState({
         address,
         isConnected: true,
         signer,
-        userInfo: web3auth.userInfo(),
+        userInfo,
       });
     } catch (error) {
       console.error('Failed to connect wallet:', error);
