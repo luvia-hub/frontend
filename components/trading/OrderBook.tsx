@@ -158,14 +158,14 @@ const styles = StyleSheet.create({
         color: '#22C55E',
         fontSize: 13,
         fontWeight: '600',
-        fontFamily: 'monospace',
+        fontFamily: 'Courier',
         zIndex: 1,
     },
     orderPriceSell: {
         color: '#EF4444',
         fontSize: 13,
         fontWeight: '600',
-        fontFamily: 'monospace',
+        fontFamily: 'Courier',
         zIndex: 1,
     },
     emptyState: {
