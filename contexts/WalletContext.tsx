@@ -29,8 +29,10 @@ const LOGIN_PROVIDER_MAP: Record<string, typeof LOGIN_PROVIDER[keyof typeof LOGI
  * Safely retrieves user info from Web3Auth instance.
  * Handles cases where userInfo() might not be available, might throw errors,
  * or might return a Promise (for cross-platform compatibility).
+ * 
+ * @returns User info object or null if not available
  */
-async function safeGetUserInfo(web3authInstance: Web3Auth | null): Promise<any | null> {
+async function safeGetUserInfo(web3authInstance: Web3Auth | null): Promise<unknown> {
   if (!web3authInstance || typeof web3authInstance.userInfo !== 'function') {
     return null;
   }
@@ -41,9 +43,8 @@ async function safeGetUserInfo(web3authInstance: Web3Auth | null): Promise<any |
     // Use Promise.resolve to safely handle both cases
     return await Promise.resolve(result);
   } catch (error) {
-    // This is expected during initialization on some platforms (e.g., Android)
-    // where userInfo() may not be immediately available
-    console.warn('Could not retrieve user info (this is normal during initialization):', error);
+    // This may occur when the SDK is not fully initialized yet
+    console.warn('Could not retrieve user info (SDK may not be fully initialized):', error);
     return null;
   }
 }
@@ -52,7 +53,7 @@ export interface WalletState {
   address: string | null;
   isConnected: boolean;
   signer: ethers.Signer | null;
-  userInfo: any | null;
+  userInfo: unknown;
 }
 
 type LoginProvider = 'google' | 'apple' | 'twitter' | 'discord' | 'email_passwordless' | 'privatekey';
