@@ -145,13 +145,17 @@ const parseTrades = (payload: unknown): Trade[] => {
     .filter((trade): trade is Trade => Boolean(trade) && trade.price > 0 && trade.size > 0);
 };
 
-export default function TradingInterface() {
+interface TradingInterfaceProps {
+  selectedMarket?: string;
+}
+
+export default function TradingInterface({ selectedMarket }: TradingInterfaceProps) {
   const [activeTab, setActiveTab] = useState<TabType>('orderBook');
   const [orderType, setOrderType] = useState<OrderType>('market');
   const [timeInterval, setTimeInterval] = useState<TimeInterval>('15m');
   const [size, setSize] = useState('0.5');
   const [leverage, setLeverage] = useState(10);
-  const [selectedPair] = useState(DEFAULT_PAIR);
+  const [selectedPair] = useState(selectedMarket ?? DEFAULT_PAIR);
   const [connectionState, setConnectionState] = useState<ConnectionState>('loading');
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [orderBook, setOrderBook] = useState<OrderBookState | null>(null);

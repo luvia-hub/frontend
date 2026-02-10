@@ -87,9 +87,10 @@ function getAvatarColor(symbol: string): string {
 
 interface MarketRowProps {
   market: Market;
+  onPress?: (market: Market) => void;
 }
 
-const MarketRow = React.memo(function MarketRow({ market }: MarketRowProps) {
+const MarketRow = React.memo(function MarketRow({ market, onPress }: MarketRowProps) {
   const isPositive = market.priceChange > 0;
   const isNeutral = market.priceChange === 0;
   const priceColor = isNeutral ? '#9CA3AF' : isPositive ? '#22C55E' : '#EF4444';
@@ -102,6 +103,7 @@ const MarketRow = React.memo(function MarketRow({ market }: MarketRowProps) {
   return (
     <TouchableOpacity
       style={styles.marketRow}
+      onPress={() => onPress?.(market)}
       accessibilityRole="button"
       accessibilityLabel={`${market.symbol} at $${market.price}`}
     >
@@ -164,7 +166,11 @@ const MarketRow = React.memo(function MarketRow({ market }: MarketRowProps) {
   );
 });
 
-export default function MarketListScreen() {
+interface MarketListScreenProps {
+  onMarketPress?: (market: { symbol: string; name: string }) => void;
+}
+
+export default function MarketListScreen({ onMarketPress }: MarketListScreenProps) {
   const [markets, setMarkets] = useState<Market[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
@@ -259,7 +265,7 @@ export default function MarketListScreen() {
     });
   }, [activeFilter, markets, searchQuery]);
 
-  const renderMarketRow = useCallback(({ item }: { item: Market }) => <MarketRow market={item} />, []);
+  const renderMarketRow = useCallback(({ item }: { item: Market }) => <MarketRow market={item} onPress={onMarketPress} />, [onMarketPress]);
 
   return (
     <View style={styles.container}>
