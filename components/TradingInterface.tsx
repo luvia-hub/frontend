@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import {
   TradingHeader,
@@ -16,6 +16,7 @@ import {
 } from './trading';
 import type { TabType, OrderType, TimeInterval, IndicatorType } from './trading';
 import { DEFAULT_PAIR, MAX_ORDER_LEVELS, DEFAULT_ACTIVE_INDICATORS } from './trading';
+import { loadActiveIndicators, saveActiveIndicators } from '../utils/indicatorStorage';
 
 // Tab definitions (stable references)
 const CONTENT_TABS: { key: TabType; label: string }[] = [
@@ -42,6 +43,20 @@ export default function TradingInterface({ selectedMarket }: TradingInterfacePro
   const [price, setPrice] = useState('');
   const [leverage, setLeverage] = useState(10);
   const [activeIndicators, setActiveIndicators] = useState<IndicatorType[]>(DEFAULT_ACTIVE_INDICATORS);
+
+  // Load saved indicators on mount
+  useEffect(() => {
+    loadActiveIndicators().then((saved) => {
+      if (saved && saved.length >= 0) {
+        setActiveIndicators(saved);
+      }
+    });
+  }, []);
+
+  // Save indicators when they change
+  useEffect(() => {
+    saveActiveIndicators(activeIndicators);
+  }, [activeIndicators]);
 
   const selectedPair = selectedMarket ?? DEFAULT_PAIR;
   const pairLabel = `${selectedPair}/USD`;
