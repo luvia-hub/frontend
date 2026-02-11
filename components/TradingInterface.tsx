@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import {
   TradingHeader,
   PriceStats,
@@ -8,13 +8,9 @@ import {
   TimeIntervalBar,
   OrderBook,
   RecentTrades,
-  LeverageSelector,
-  SizeInput,
-  PriceInput,
-  ActionButtons,
   useHyperliquidData,
 } from './trading';
-import type { TabType, OrderType, TimeInterval, IndicatorType } from './trading';
+import type { TabType, TimeInterval, IndicatorType } from './trading';
 import { DEFAULT_PAIR, MAX_ORDER_LEVELS, DEFAULT_ACTIVE_INDICATORS } from './trading';
 import { loadActiveIndicators, saveActiveIndicators } from '../utils/indicatorStorage';
 
@@ -25,23 +21,14 @@ const CONTENT_TABS: { key: TabType; label: string }[] = [
   { key: 'info', label: 'Info' },
 ];
 
-const ORDER_TYPE_TABS: { key: OrderType; label: string }[] = [
-  { key: 'market', label: 'Market' },
-  { key: 'limit', label: 'Limit' },
-  { key: 'stop', label: 'Stop' },
-];
-
 interface TradingInterfaceProps {
   selectedMarket?: string;
+  onOpenTradingForm: () => void;
 }
 
-export default function TradingInterface({ selectedMarket }: TradingInterfaceProps) {
+export default function TradingInterface({ selectedMarket, onOpenTradingForm }: TradingInterfaceProps) {
   const [activeTab, setActiveTab] = useState<TabType>('orderBook');
-  const [orderType, setOrderType] = useState<OrderType>('market');
   const [timeInterval, setTimeInterval] = useState<TimeInterval>('15m');
-  const [size, setSize] = useState('0.5');
-  const [price, setPrice] = useState('');
-  const [leverage, setLeverage] = useState(10);
   const [activeIndicators, setActiveIndicators] = useState<IndicatorType[]>(DEFAULT_ACTIVE_INDICATORS);
 
   // Load saved indicators on mount
@@ -81,9 +68,6 @@ export default function TradingInterface({ selectedMarket }: TradingInterfacePro
   const bestAsk = orderBook?.asks[0]?.price;
   const markPrice = bestBid && bestAsk ? (bestBid + bestAsk) / 2 : baseMarkPrice;
 
-  const sizeValue = parseFloat(size) * markPrice;
-  const fee = sizeValue * 0.0006;
-
   const displayedBids = useMemo(
     () => (orderBook?.bids ?? []).slice(0, MAX_ORDER_LEVELS),
     [orderBook],
@@ -95,11 +79,7 @@ export default function TradingInterface({ selectedMarket }: TradingInterfacePro
 
   // Stable callbacks for child components
   const handleTabChange = useCallback((tab: TabType) => setActiveTab(tab), []);
-  const handleOrderTypeChange = useCallback((type: OrderType) => setOrderType(type), []);
   const handleTimeIntervalChange = useCallback((interval: TimeInterval) => setTimeInterval(interval), []);
-  const handleLeverageChange = useCallback((value: number) => setLeverage(value), []);
-  const handleSizeChange = useCallback((value: string) => setSize(value), []);
-  const handlePriceChange = useCallback((value: string) => setPrice(value), []);
   const handleToggleIndicator = useCallback((indicator: IndicatorType) => {
     setActiveIndicators((prev) =>
       prev.includes(indicator)
@@ -109,126 +89,94 @@ export default function TradingInterface({ selectedMarket }: TradingInterfacePro
   }, []);
 
   // Available balance trailing element for order type tab bar
-  const availableTrailing = useMemo(
-    () => (
-      <View style={styles.availableContainer}>
-        <Text style={styles.availableLabel}>AVAILABLE</Text>
-        <Text style={styles.availableValue}>${available.toLocaleString()}</Text>
-      </View>
-    ),
-    [available],
-  );
+  // Removed availableTrailing as it's no longer used here
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.contentContainer}
-      showsVerticalScrollIndicator={false}
-    >
-      <TradingHeader pairLabel={pairLabel} priceChange={priceChange} />
+    <View style={styles.imgContainer}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        <TradingHeader pairLabel={pairLabel} priceChange={priceChange} />
 
-      <PriceStats
-        markPrice={markPrice}
-        indexPrice={indexPrice}
-        volume24h={volume24h}
-      />
-
-      <ConnectionBanner
-        connectionState={connectionState}
-        connectionError={connectionError}
-      />
-
-      {/* Chart Panel */}
-      <View style={[styles.panel, styles.chartPanel]}>
-        <TimeIntervalBar
-          timeInterval={timeInterval}
-          onTimeIntervalChange={handleTimeIntervalChange}
-          chartData={chartData}
-          activeIndicators={activeIndicators}
-          onToggleIndicator={handleToggleIndicator}
-        />
-      </View>
-
-      {/* Order Book / Recent Trades Panel */}
-      <View style={[styles.panel, styles.dataPanel]}>
-        <TabBar
-          tabs={CONTENT_TABS}
-          activeTab={activeTab}
-          onTabChange={handleTabChange}
-        />
-
-        {activeTab === 'orderBook' && (
-          <OrderBook
-            bids={displayedBids}
-            asks={displayedAsks}
-            connectionState={connectionState}
-          />
-        )}
-
-        {activeTab === 'recentTrades' && (
-          <RecentTrades
-            trades={recentTrades}
-            connectionState={connectionState}
-          />
-        )}
-
-        {activeTab === 'info' && (
-          <View style={styles.tabContent}>
-            <Text style={styles.tabContentText}>Info</Text>
-          </View>
-        )}
-      </View>
-
-      {/* Trading Form Panel */}
-      <View style={[styles.panel, styles.tradePanel]}>
-        <TabBar
-          tabs={ORDER_TYPE_TABS}
-          activeTab={orderType}
-          onTabChange={handleOrderTypeChange}
-          trailing={availableTrailing}
-        />
-
-        <LeverageSelector
-          leverage={leverage}
-          onLeverageChange={handleLeverageChange}
-        />
-
-        {(orderType === 'limit' || orderType === 'stop') && (
-          <PriceInput
-            price={price}
-            onPriceChange={handlePriceChange}
-            label={orderType === 'limit' ? 'Limit Price' : 'Stop Price'}
-            markPrice={markPrice}
-          />
-        )}
-
-        <SizeInput
-          size={size}
-          onSizeChange={handleSizeChange}
-          sizeValue={sizeValue}
-          fee={fee}
-        />
-
-        <ActionButtons 
+        <PriceStats
           markPrice={markPrice}
-          orderType={orderType}
-          size={size}
-          price={price}
-          leverage={leverage}
-          selectedPair={selectedPair}
+          indexPrice={indexPrice}
+          volume24h={volume24h}
         />
+
+        <ConnectionBanner
+          connectionState={connectionState}
+          connectionError={connectionError}
+        />
+
+        {/* Chart Panel */}
+        <View style={[styles.panel, styles.chartPanel]}>
+          <TimeIntervalBar
+            timeInterval={timeInterval}
+            onTimeIntervalChange={handleTimeIntervalChange}
+            chartData={chartData}
+            activeIndicators={activeIndicators}
+            onToggleIndicator={handleToggleIndicator}
+          />
+        </View>
+
+        {/* Order Book / Recent Trades Panel */}
+        <View style={[styles.panel, styles.dataPanel]}>
+          <TabBar
+            tabs={CONTENT_TABS}
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+          />
+
+          {activeTab === 'orderBook' && (
+            <OrderBook
+              bids={displayedBids}
+              asks={displayedAsks}
+              connectionState={connectionState}
+            />
+          )}
+
+          {activeTab === 'recentTrades' && (
+            <RecentTrades
+              trades={recentTrades}
+              connectionState={connectionState}
+            />
+          )}
+
+          {activeTab === 'info' && (
+            <View style={styles.tabContent}>
+              <Text style={styles.tabContentText}>Info</Text>
+            </View>
+          )}
+        </View>
+      </ScrollView>
+
+      {/* Trade Button */}
+      <View style={styles.floatingButtonContainer}>
+        <TouchableOpacity
+          style={styles.tradeButton}
+          onPress={onOpenTradingForm}
+        >
+          <Text style={styles.tradeButtonText}>Trade</Text>
+        </TouchableOpacity>
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  imgContainer: {
+    flex: 1,
+    position: 'relative',
+  },
   container: {
     flex: 1,
     backgroundColor: '#0A0E17',
   },
   contentContainer: {
-    paddingBottom: 32,
+    paddingBottom: 80, // Add padding for the floating button
     gap: 4,
   },
   panel: {
@@ -243,24 +191,6 @@ const styles = StyleSheet.create({
   dataPanel: {
     paddingBottom: 12,
   },
-  tradePanel: {
-    paddingBottom: 4,
-  },
-  availableContainer: {
-    marginLeft: 'auto',
-    alignItems: 'flex-end',
-  },
-  availableLabel: {
-    color: '#6B7280',
-    fontSize: 10,
-    fontWeight: '600',
-    marginBottom: 2,
-  },
-  availableValue: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '700',
-  },
   tabContent: {
     padding: 32,
     alignItems: 'center',
@@ -268,5 +198,31 @@ const styles = StyleSheet.create({
   tabContentText: {
     color: '#6B7280',
     fontSize: 14,
+  },
+  floatingButtonContainer: {
+    position: 'absolute',
+    bottom: 24,
+    right: 16,
+    left: 16,
+  },
+  tradeButton: {
+    backgroundColor: '#3B82F6',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#3B82F6',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  tradeButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
   },
 });

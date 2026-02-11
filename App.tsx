@@ -2,28 +2,32 @@ import React, { useState } from 'react';
 import { StyleSheet, View, TouchableOpacity, Text, Modal } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Home, ArrowRightLeft, TrendingUp, Wallet } from 'lucide-react-native';
+import { Home, BarChart3, ArrowRightLeft, TrendingUp, Wallet } from 'lucide-react-native';
 import DashboardScreen from './components/DashboardScreen';
 import CryptoPortfolioDashboard from './components/CryptoPortfolioDashboard';
 import TradingInterface from './components/TradingInterface';
 import ConnectSourcesScreen from './components/ConnectSourcesScreen';
-// import MarketListScreen from './components/MarketListScreen';
+import TradingFormScreen from './components/TradingFormScreen';
+import MarketListScreen from './components/MarketListScreen';
 import ActivePositionsScreen from './components/ActivePositionsScreen';
 import WalletConnectScreen from './components/WalletConnectScreen';
 import { WalletProvider } from './contexts/WalletContext';
 
-type Tab = 'home' | 'trade' | 'earn' | 'wallet';
+type Tab = 'home' | 'markets' | 'trade' | 'earn' | 'wallet';
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState<Tab>('home');
   const [showConnectSources, setShowConnectSources] = useState(false);
   const [showActivePositions, setShowActivePositions] = useState(false);
+  const [showTradingForm, setShowTradingForm] = useState(false);
   const [selectedMarket, setSelectedMarket] = useState<string | undefined>(undefined);
 
   const getHeaderTitle = () => {
     switch (activeTab) {
       case 'home':
         return 'Home';
+      case 'markets':
+        return 'Markets';
       case 'trade':
         return 'Trade';
       case 'earn':
@@ -55,8 +59,13 @@ function AppContent() {
       <View style={styles.content}>
         {activeTab === 'home' ? (
           <DashboardScreen onViewAllPositions={() => setShowActivePositions(true)} />
+        ) : activeTab === 'markets' ? (
+          <MarketListScreen onMarketPress={handleMarketPress} />
         ) : activeTab === 'trade' ? (
-          <TradingInterface selectedMarket={selectedMarket} />
+          <TradingInterface
+            selectedMarket={selectedMarket}
+            onOpenTradingForm={() => setShowTradingForm(true)}
+          />
         ) : activeTab === 'earn' ? (
           <CryptoPortfolioDashboard onConnectPress={() => setShowConnectSources(true)} />
         ) : (
@@ -84,91 +93,134 @@ function AppContent() {
         <ActivePositionsScreen onBack={() => setShowActivePositions(false)} />
       </Modal>
 
+      {/* Trading Form Modal */}
+      <Modal
+        visible={showTradingForm}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowTradingForm(false)}
+      >
+        <TradingFormScreen
+          onClose={() => setShowTradingForm(false)}
+          selectedMarket={selectedMarket}
+        />
+      </Modal>
+
       {/* Bottom Tab Bar */}
-      <View style={styles.tabBar}>
-        <TouchableOpacity
-          style={styles.tabItem}
-          onPress={() => setActiveTab('home')}
-          accessibilityRole="tab"
-          accessibilityLabel="Home tab"
-          accessibilityState={{ selected: activeTab === 'home' }}
-        >
-          <Home
-            size={22}
-            color={activeTab === 'home' ? '#FFFFFF' : '#6B7280'}
-          />
-          <Text
-            style={[
-              styles.tabLabel,
-              activeTab === 'home' && styles.tabLabelActive,
-            ]}
+      <View style={styles.tabBarContainer}>
+        <View style={styles.tabBar}>
+          <TouchableOpacity
+            style={styles.tabItem}
+            onPress={() => setActiveTab('home')}
+            accessibilityRole="tab"
+            accessibilityLabel="Home tab"
+            accessibilityState={{ selected: activeTab === 'home' }}
           >
-            Home
-          </Text>
-        </TouchableOpacity>
+            <Home
+              size={22}
+              color={activeTab === 'home' ? '#FFFFFF' : '#6B7280'}
+            />
+            <Text
+              style={[
+                styles.tabLabel,
+                activeTab === 'home' && styles.tabLabelActive,
+              ]}
+            >
+              Home
+            </Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.tabItem}
-          onPress={() => setActiveTab('trade')}
-          accessibilityRole="tab"
-          accessibilityLabel="Trade tab"
-          accessibilityState={{ selected: activeTab === 'trade' }}
-        >
-          <ArrowRightLeft
-            size={22}
-            color={activeTab === 'trade' ? '#FFFFFF' : '#6B7280'}
-          />
-          <Text
-            style={[
-              styles.tabLabel,
-              activeTab === 'trade' && styles.tabLabelActive,
-            ]}
+          <TouchableOpacity
+            style={styles.tabItem}
+            onPress={() => setActiveTab('markets')}
+            accessibilityRole="tab"
+            accessibilityLabel="Markets tab"
+            accessibilityState={{ selected: activeTab === 'markets' }}
           >
-            Trade
-          </Text>
-        </TouchableOpacity>
+            <BarChart3
+              size={22}
+              color={activeTab === 'markets' ? '#FFFFFF' : '#6B7280'}
+            />
+            <Text
+              style={[
+                styles.tabLabel,
+                activeTab === 'markets' && styles.tabLabelActive,
+              ]}
+            >
+              Markets
+            </Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.tabItem}
-          onPress={() => setActiveTab('earn')}
-          accessibilityRole="tab"
-          accessibilityLabel="Earn tab"
-          accessibilityState={{ selected: activeTab === 'earn' }}
-        >
-          <TrendingUp
-            size={22}
-            color={activeTab === 'earn' ? '#FFFFFF' : '#6B7280'}
-          />
-          <Text
-            style={[
-              styles.tabLabel,
-              activeTab === 'earn' && styles.tabLabelActive,
-            ]}
-          >
-            Earn
-          </Text>
-        </TouchableOpacity>
+          {/* Center Trade Action Button */}
+          <View style={styles.tradeButtonWrapper}>
+            <TouchableOpacity
+              style={[
+                styles.tradeButton,
+                activeTab === 'trade' && styles.tradeButtonActive,
+              ]}
+              onPress={() => setActiveTab('trade')}
+              accessibilityRole="tab"
+              accessibilityLabel="Trade tab"
+              accessibilityState={{ selected: activeTab === 'trade' }}
+            >
+              <ArrowRightLeft
+                size={26}
+                color="#FFFFFF"
+              />
+            </TouchableOpacity>
+            <Text
+              style={[
+                styles.tabLabel,
+                styles.tradeLabel,
+                activeTab === 'trade' && styles.tabLabelActive,
+              ]}
+            >
+              Trade
+            </Text>
+          </View>
 
-        <TouchableOpacity
-          style={styles.tabItem}
-          onPress={() => setActiveTab('wallet')}
-          accessibilityRole="tab"
-          accessibilityLabel="Wallet tab"
-          accessibilityState={{ selected: activeTab === 'wallet' }}
-        >
-          <Wallet
-            size={22}
-            color={activeTab === 'wallet' ? '#FFFFFF' : '#6B7280'}
-          />
-          <Text
-            style={[
-              styles.tabLabel,
-              activeTab === 'wallet' && styles.tabLabelActive,
-            ]}
+          <TouchableOpacity
+            style={styles.tabItem}
+            onPress={() => setActiveTab('earn')}
+            accessibilityRole="tab"
+            accessibilityLabel="Earn tab"
+            accessibilityState={{ selected: activeTab === 'earn' }}
           >
-            Wallet
-          </Text>
-        </TouchableOpacity>
+            <TrendingUp
+              size={22}
+              color={activeTab === 'earn' ? '#FFFFFF' : '#6B7280'}
+            />
+            <Text
+              style={[
+                styles.tabLabel,
+                activeTab === 'earn' && styles.tabLabelActive,
+              ]}
+            >
+              Earn
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.tabItem}
+            onPress={() => setActiveTab('wallet')}
+            accessibilityRole="tab"
+            accessibilityLabel="Wallet tab"
+            accessibilityState={{ selected: activeTab === 'wallet' }}
+          >
+            <Wallet
+              size={22}
+              color={activeTab === 'wallet' ? '#FFFFFF' : '#6B7280'}
+            />
+            <Text
+              style={[
+                styles.tabLabel,
+                activeTab === 'wallet' && styles.tabLabelActive,
+              ]}
+            >
+              Wallet
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -202,11 +254,14 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
-  tabBar: {
-    flexDirection: 'row',
+  tabBarContainer: {
     backgroundColor: '#141926',
     borderTopWidth: 1,
     borderTopColor: '#1E293B',
+  },
+  tabBar: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
     paddingBottom: 8,
     paddingTop: 8,
   },
@@ -215,6 +270,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 8,
     gap: 4,
+  },
+  tradeButtonWrapper: {
+    flex: 1,
+    alignItems: 'center',
+    marginTop: -20,
+  },
+  tradeButton: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#3B82F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#3B82F6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  tradeButtonActive: {
+    backgroundColor: '#2563EB',
+    shadowOpacity: 0.6,
+  },
+  tradeLabel: {
+    marginTop: 4,
   },
   tabLabel: {
     color: '#6B7280',
