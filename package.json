@@ -9,10 +9,12 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@ethersproject/shims": "^5.8.0",
     "@expo/metro-runtime": "~6.1.2",
     "@far1s/hyperliquid": "^0.17.2-rn",
     "@web3auth/ethereum-provider": "^9.7.0",
     "@web3auth/react-native-sdk": "^8.1.0",
+    "buffer": "^6.0.3",
     "ethers": "^6.16.0",
     "expo": "~54.0.33",
     "expo-secure-store": "^15.0.8",
@@ -23,6 +25,7 @@
     "react": "19.1.0",
     "react-dom": "^19.1.0",
     "react-native": "0.81.5",
+    "react-native-get-random-values": "^2.0.0",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-svg": "^15.15.2",
     "react-native-web": "^0.21.2",

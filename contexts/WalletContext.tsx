@@ -43,22 +43,22 @@ function isWeb3AuthUserInfo(obj: unknown): obj is Web3AuthUserInfo {
   if (typeof obj !== 'object' || obj === null) {
     return false;
   }
-  
+
   const candidate = obj as Record<string, unknown>;
-  
+
   // All properties in Web3AuthUserInfo are optional strings
   const stringProperties = [
-    'email', 'name', 'profileImage', 'aggregateVerifier', 
+    'email', 'name', 'profileImage', 'aggregateVerifier',
     'verifier', 'verifierId', 'typeOfLogin'
   ];
-  
+
   // Check that all properties have the correct types
   for (const prop of stringProperties) {
     if (prop in candidate && !isNullableString(candidate[prop])) {
       return false;
     }
   }
-  
+
   // At least one identifying property should be present
   // We only check user-facing properties here; technical properties like aggregateVerifier
   // and typeOfLogin may not always be present but are not needed for user identification.
@@ -71,8 +71,6 @@ function isWeb3AuthUserInfo(obj: unknown): obj is Web3AuthUserInfo {
 const LOGIN_PROVIDER_MAP: Record<string, typeof LOGIN_PROVIDER[keyof typeof LOGIN_PROVIDER]> = {
   google: LOGIN_PROVIDER.GOOGLE,
   apple: LOGIN_PROVIDER.APPLE,
-  twitter: LOGIN_PROVIDER.TWITTER,
-  discord: LOGIN_PROVIDER.DISCORD,
   email_passwordless: LOGIN_PROVIDER.EMAIL_PASSWORDLESS,
 };
 
@@ -93,13 +91,13 @@ async function safeGetUserInfo(web3authInstance: Web3Auth | null): Promise<Web3A
     // Explicitly handle both synchronous and asynchronous return values
     // This makes the intent clearer and improves maintainability
     const userInfo = result instanceof Promise ? await result : result;
-    
+
     // Validate that the result matches our expected interface
     if (!isWeb3AuthUserInfo(userInfo)) {
       console.warn('User info returned from SDK does not match expected structure');
       return null;
     }
-    
+
     return userInfo;
   } catch (error) {
     // This may occur when the SDK is not fully initialized yet
@@ -115,7 +113,7 @@ export interface WalletState {
   userInfo: Web3AuthUserInfo | null;
 }
 
-type LoginProvider = 'google' | 'apple' | 'twitter' | 'discord' | 'email_passwordless' | 'privatekey';
+type LoginProvider = 'google' | 'apple' | 'email_passwordless' | 'privatekey';
 
 interface WalletContextValue extends WalletState {
   connect: (provider: LoginProvider, privateKey?: string) => Promise<void>;
@@ -175,7 +173,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
           const signer = await ethersProvider.getSigner();
           const address = await signer.getAddress();
           const userInfo = await safeGetUserInfo(web3AuthInstance);
-          
+
           setWalletState({
             address,
             isConnected: true,
@@ -198,7 +196,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
       if (provider === 'privatekey' && privateKey) {
         const wallet = new ethers.Wallet(privateKey);
         const address = await wallet.getAddress();
-        
+
         setWalletState({
           address,
           isConnected: true,
@@ -225,7 +223,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
       const signer = await ethersProvider.getSigner();
       const address = await signer.getAddress();
       const userInfo = await safeGetUserInfo(web3auth);
-      
+
       setWalletState({
         address,
         isConnected: true,
@@ -246,7 +244,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
     } catch (error) {
       console.error('Failed to logout from Web3Auth:', error);
     }
-    
+
     setWalletState({
       address: null,
       isConnected: false,

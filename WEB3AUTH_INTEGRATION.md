@@ -9,8 +9,6 @@ Successfully integrated Web3Auth authentication into the Hyperliquid trading app
 ### 1. Multi-Provider Social Login
 - ✅ Google OAuth
 - ✅ Apple Sign-In
-- ✅ Twitter OAuth
-- ✅ Discord OAuth
 - ✅ Email Passwordless Login
 - ✅ Private Key (Legacy/Advanced Users)
 

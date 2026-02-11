@@ -7,7 +7,7 @@ import DashboardScreen from './components/DashboardScreen';
 import CryptoPortfolioDashboard from './components/CryptoPortfolioDashboard';
 import TradingInterface from './components/TradingInterface';
 import ConnectSourcesScreen from './components/ConnectSourcesScreen';
-import MarketListScreen from './components/MarketListScreen';
+// import MarketListScreen from './components/MarketListScreen';
 import ActivePositionsScreen from './components/ActivePositionsScreen';
 import WalletConnectScreen from './components/WalletConnectScreen';
 import { WalletProvider } from './contexts/WalletContext';

@@ -9,7 +9,7 @@ export default function WalletConnectScreen() {
   const [showPrivateKeyLogin, setShowPrivateKeyLogin] = useState(false);
   const wallet = useWallet();
 
-  const handleWeb3AuthLogin = async (provider: 'google' | 'apple' | 'twitter' | 'discord' | 'email_passwordless') => {
+  const handleWeb3AuthLogin = async (provider: 'google' | 'apple' | 'email_passwordless') => {
     if (!wallet.isInitialized) {
       Alert.alert('Please Wait', 'Web3Auth is still initializing...');
       return;
@@ -121,7 +121,7 @@ export default function WalletConnectScreen() {
             <>
               <View style={styles.providersContainer}>
                 <Text style={styles.sectionTitle}>Social Login</Text>
-                
+
                 <TouchableOpacity
                   style={[styles.providerButton, styles.googleButton]}
                   onPress={() => handleWeb3AuthLogin('google')}
@@ -142,28 +142,6 @@ export default function WalletConnectScreen() {
                     <Text style={styles.providerEmoji}>🍎</Text>
                   </View>
                   <Text style={styles.providerButtonText}>Continue with Apple</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.providerButton, styles.twitterButton]}
-                  onPress={() => handleWeb3AuthLogin('twitter')}
-                  disabled={isConnecting}
-                >
-                  <View style={styles.providerIcon}>
-                    <Text style={styles.providerEmoji}>🐦</Text>
-                  </View>
-                  <Text style={styles.providerButtonText}>Continue with Twitter</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.providerButton, styles.discordButton]}
-                  onPress={() => handleWeb3AuthLogin('discord')}
-                  disabled={isConnecting}
-                >
-                  <View style={styles.providerIcon}>
-                    <Text style={styles.providerEmoji}>💬</Text>
-                  </View>
-                  <Text style={styles.providerButtonText}>Continue with Discord</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -239,7 +217,7 @@ export default function WalletConnectScreen() {
               <View style={styles.warningCard}>
                 <Text style={styles.warningTitle}>🔒 Security Notice</Text>
                 <Text style={styles.warningText}>
-                  Private key login is for advanced users only. For better security and ease of use, 
+                  Private key login is for advanced users only. For better security and ease of use,
                   we recommend using Web3Auth social login instead.
                 </Text>
               </View>
@@ -426,12 +404,6 @@ const styles = StyleSheet.create({
   },
   appleButton: {
     borderColor: '#FFFFFF20',
-  },
-  twitterButton: {
-    borderColor: '#1DA1F2',
-  },
-  discordButton: {
-    borderColor: '#5865F2',
   },
   emailButton: {
     borderColor: '#F59E0B',

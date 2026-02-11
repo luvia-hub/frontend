@@ -9,7 +9,7 @@ This application provides a secure, user-friendly mobile trading interface for t
 ## Features Implemented
 
 ### 1. Web3Auth Authentication (`contexts/WalletContext.tsx`, `config/web3auth.ts`)
-- **Multiple Login Providers**: Google, Apple, Twitter, Discord, and Email passwordless login
+- **Multiple Login Providers**: Google, Apple and Email passwordless login
 - **Non-Custodial Wallet**: Users own their keys via Web3Auth's MPC (Multi-Party Computation) infrastructure
 - **Social Recovery**: Easy account recovery without seed phrases
 - **Secure Storage**: Session management using expo-secure-store
@@ -37,7 +37,7 @@ This application provides a secure, user-friendly mobile trading interface for t
 #### WalletConnectScreen (`components/WalletConnectScreen.tsx`)
 - **Modern Social Login UI**: Beautiful, branded buttons for each provider
 - **Loading States**: Smooth initialization experience
-- **Provider Selection**: Google, Apple, Twitter, Discord, Email options
+- **Provider Selection**: Google, Apple, Email options
 - **Legacy Support**: Collapsible private key input for advanced users
 - **User Information Display**: Shows logged-in user details (email/name)
 - **Connected State**: Clear status indication and wallet address display
@@ -182,7 +182,7 @@ The implementation uses the @far1s/hyperliquid library which handles:
 
 ## Testing Recommendations
 1. **Authentication Testing**
-   - Test each social login provider (Google, Apple, Twitter, Discord, Email)
+   - Test each social login provider (Google, Apple, Email)
    - Test session persistence across app restarts
    - Test automatic reconnection
    - Test logout and re-login flow
