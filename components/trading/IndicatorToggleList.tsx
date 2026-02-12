@@ -7,12 +7,47 @@ import { AVAILABLE_INDICATORS } from './types';
 interface IndicatorToggleListProps {
     activeIndicators: IndicatorType[];
     onToggleIndicator: (indicator: IndicatorType) => void;
+    mode?: 'row' | 'grid';
 }
 
 function IndicatorToggleList({
     activeIndicators,
     onToggleIndicator,
+    mode = 'row',
 }: IndicatorToggleListProps) {
+    const renderIndicator = (indicator: { key: IndicatorType; label: string }) => {
+        const isActive = activeIndicators.includes(indicator.key);
+        return (
+            <TouchableOpacity
+                key={indicator.key}
+                style={[
+                    styles.pill,
+                    isActive && styles.pillActive,
+                    mode === 'grid' && styles.pillGrid,
+                ]}
+                onPress={() => onToggleIndicator(indicator.key)}
+                activeOpacity={0.7}
+            >
+                <Text
+                    style={[
+                        styles.pillText,
+                        isActive && styles.pillTextActive,
+                    ]}
+                >
+                    {indicator.label}
+                </Text>
+            </TouchableOpacity>
+        );
+    };
+
+    if (mode === 'grid') {
+        return (
+            <View style={styles.gridContainer}>
+                {AVAILABLE_INDICATORS.map(renderIndicator)}
+            </View>
+        );
+    }
+
     return (
         <View style={styles.container}>
             <View style={styles.labelContainer}>
@@ -23,29 +58,7 @@ function IndicatorToggleList({
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
             >
-                {AVAILABLE_INDICATORS.map((indicator) => {
-                    const isActive = activeIndicators.includes(indicator.key);
-                    return (
-                        <TouchableOpacity
-                            key={indicator.key}
-                            style={[
-                                styles.pill,
-                                isActive && styles.pillActive,
-                            ]}
-                            onPress={() => onToggleIndicator(indicator.key)}
-                            activeOpacity={0.7}
-                        >
-                            <Text
-                                style={[
-                                    styles.pillText,
-                                    isActive && styles.pillTextActive,
-                                ]}
-                            >
-                                {indicator.label}
-                            </Text>
-                        </TouchableOpacity>
-                    );
-                })}
+                {AVAILABLE_INDICATORS.map(renderIndicator)}
             </ScrollView>
         </View>
     );
@@ -58,6 +71,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         marginBottom: 12,
+    },
+    gridContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+        padding: 16,
     },
     labelContainer: {
         marginRight: 8,
@@ -73,7 +92,15 @@ const styles = StyleSheet.create({
         borderRadius: 14,
         backgroundColor: '#141926',
         borderWidth: 1,
-        borderColor: 'transparent',
+        borderColor: '#1E293B',
+    },
+    pillGrid: {
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        borderRadius: 8,
+        backgroundColor: '#1E293B',
+        minWidth: '30%',
+        alignItems: 'center',
     },
     pillActive: {
         backgroundColor: '#0F2847',

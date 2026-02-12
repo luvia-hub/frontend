@@ -294,7 +294,7 @@ window.syncIndicators = function (indicators) {
             if (MAIN_INDICATORS.indexOf(ind) >= 0) {
                 chart.createIndicator(ind, false, { id: 'candle_pane' });
             } else if (!activeSubPanes[ind]) {
-                var paneId = chart.createIndicator(ind, false, { height: 80 });
+                var paneId = chart.createIndicator(ind, false, { height: 50 });
                 if (paneId) { activeSubPanes[ind] = paneId; }
             }
         }

@@ -1,8 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Settings, Maximize2 } from 'lucide-react-native';
+import { Settings, Maximize2, Layers } from 'lucide-react-native';
 import KLineChartWebView from '../KLineChartWebView';
 import IndicatorToggleList from './IndicatorToggleList';
+import BottomSheet from '../ui/BottomSheet';
 import type { CandleData, TimeInterval, IndicatorType } from './types';
 import { TIME_INTERVALS } from './types';
 
@@ -21,6 +22,8 @@ function TimeIntervalBar({
     activeIndicators,
     onToggleIndicator,
 }: TimeIntervalBarProps) {
+    const [isIndicatorSheetVisible, setIndicatorSheetVisible] = React.useState(false);
+
     return (
         <View style={styles.chartSection}>
             <View style={styles.timeIntervals}>
@@ -44,6 +47,12 @@ function TimeIntervalBar({
                     </TouchableOpacity>
                 ))}
                 <View style={styles.chartActions}>
+                    <TouchableOpacity
+                        style={styles.chartIconButton}
+                        onPress={() => setIndicatorSheetVisible(true)}
+                    >
+                        <Layers size={18} color={activeIndicators.length > 0 ? "#3B82F6" : "#6B7280"} />
+                    </TouchableOpacity>
                     <TouchableOpacity style={styles.chartIconButton}>
                         <Settings size={18} color="#6B7280" />
                     </TouchableOpacity>
@@ -53,10 +62,18 @@ function TimeIntervalBar({
                 </View>
             </View>
 
-            <IndicatorToggleList
-                activeIndicators={activeIndicators}
-                onToggleIndicator={onToggleIndicator}
-            />
+            <BottomSheet
+                isVisible={isIndicatorSheetVisible}
+                onClose={() => setIndicatorSheetVisible(false)}
+                title="Indicators"
+                height={400} // Adjust as needed
+            >
+                <IndicatorToggleList
+                    activeIndicators={activeIndicators}
+                    onToggleIndicator={onToggleIndicator}
+                    mode="grid"
+                />
+            </BottomSheet>
 
             <KLineChartWebView
                 data={chartData}
