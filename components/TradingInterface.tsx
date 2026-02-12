@@ -11,14 +11,34 @@ import {
   useHyperliquidData,
 } from './trading';
 import type { TabType, TimeInterval, IndicatorType } from './trading';
+import type { ExchangeType } from './trading';
 import { DEFAULT_PAIR, MAX_ORDER_LEVELS, DEFAULT_ACTIVE_INDICATORS } from './trading';
 import { loadActiveIndicators, saveActiveIndicators } from '../utils/indicatorStorage';
+import { loadSelectedExchange, saveSelectedExchange } from '../utils/exchangeStorage';
+
+const CONTENT_TAB_LABELS: Record<TabType, string> = {
+  orderBook: 'Order Book',
+  recentTrades: 'Recent Trades',
+  info: 'Info',
+};
 
 // Tab definitions (stable references)
 const CONTENT_TABS: { key: TabType; label: string }[] = [
-  { key: 'orderBook', label: 'Order Book' },
-  { key: 'recentTrades', label: 'Recent Trades' },
-  { key: 'info', label: 'Info' },
+  { key: 'orderBook', label: CONTENT_TAB_LABELS.orderBook },
+  { key: 'recentTrades', label: CONTENT_TAB_LABELS.recentTrades },
+  { key: 'info', label: CONTENT_TAB_LABELS.info },
+];
+
+const EXCHANGE_LABELS: Record<ExchangeType, string> = {
+  hyperliquid: 'Hyperliquid',
+  dydx: 'dYdX',
+  gmx: 'GMX',
+};
+
+const EXCHANGE_TABS: { key: ExchangeType; label: string }[] = [
+  { key: 'hyperliquid', label: EXCHANGE_LABELS.hyperliquid },
+  { key: 'dydx', label: EXCHANGE_LABELS.dydx },
+  { key: 'gmx', label: EXCHANGE_LABELS.gmx },
 ];
 
 interface TradingInterfaceProps {
@@ -28,8 +48,41 @@ interface TradingInterfaceProps {
 
 export default function TradingInterface({ selectedMarket, onOpenTradingForm }: TradingInterfaceProps) {
   const [activeTab, setActiveTab] = useState<TabType>('orderBook');
+  const [activeExchange, setActiveExchange] = useState<ExchangeType>('hyperliquid');
   const [timeInterval, setTimeInterval] = useState<TimeInterval>('15m');
   const [activeIndicators, setActiveIndicators] = useState<IndicatorType[]>(DEFAULT_ACTIVE_INDICATORS);
+
+  const isExchangeLoaded = React.useRef(false);
+  const shouldSkipNextExchangeSave = React.useRef(false);
+  useEffect(() => {
+    const loadExchange = async () => {
+      try {
+        const saved = await loadSelectedExchange();
+        if (saved !== null) {
+          shouldSkipNextExchangeSave.current = true;
+          setActiveExchange(saved);
+        }
+      } catch (error) {
+        console.warn('Failed to load selected exchange:', error);
+      } finally {
+        isExchangeLoaded.current = true;
+      }
+    };
+    loadExchange();
+  }, []);
+
+  useEffect(() => {
+    if (!isExchangeLoaded.current) {
+      return;
+    }
+    if (shouldSkipNextExchangeSave.current) {
+      shouldSkipNextExchangeSave.current = false;
+      return;
+    }
+    saveSelectedExchange(activeExchange).catch((error) => {
+      console.warn('Failed to save selected exchange:', error);
+    });
+  }, [activeExchange]);
 
   // Load saved indicators on mount
   useEffect(() => {
@@ -77,8 +130,13 @@ export default function TradingInterface({ selectedMarket, onOpenTradingForm }: 
     [orderBook],
   );
 
+  const isHyperliquid = activeExchange === 'hyperliquid';
+  const activeExchangeLabel = useMemo(() => EXCHANGE_LABELS[activeExchange], [activeExchange]);
+  const activeContentTabLabel = useMemo(() => CONTENT_TAB_LABELS[activeTab], [activeTab]);
+
   // Stable callbacks for child components
   const handleTabChange = useCallback((tab: TabType) => setActiveTab(tab), []);
+  const handleExchangeChange = useCallback((exchange: ExchangeType) => setActiveExchange(exchange), []);
   const handleTimeIntervalChange = useCallback((interval: TimeInterval) => setTimeInterval(interval), []);
   const handleToggleIndicator = useCallback((indicator: IndicatorType) => {
     setActiveIndicators((prev) =>
@@ -98,28 +156,60 @@ export default function TradingInterface({ selectedMarket, onOpenTradingForm }: 
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
+        <View style={styles.exchangeTabs}>
+          <TabBar
+            tabs={EXCHANGE_TABS}
+            activeTab={activeExchange}
+            onTabChange={handleExchangeChange}
+          />
+        </View>
+
         <TradingHeader pairLabel={pairLabel} priceChange={priceChange} />
 
-        <PriceStats
-          markPrice={markPrice}
-          indexPrice={indexPrice}
-          volume24h={volume24h}
-        />
+        {isHyperliquid ? (
+          <PriceStats
+            markPrice={markPrice}
+            indexPrice={indexPrice}
+            volume24h={volume24h}
+          />
+        ) : (
+          <View style={styles.exchangePlaceholder}>
+            <Text style={styles.exchangePlaceholderText}>
+              {activeExchangeLabel} market stats will appear once connected.
+            </Text>
+          </View>
+        )}
 
-        <ConnectionBanner
-          connectionState={connectionState}
-          connectionError={connectionError}
-        />
+        {isHyperliquid ? (
+          <ConnectionBanner
+            connectionState={connectionState}
+            connectionError={connectionError}
+          />
+        ) : (
+          <View style={styles.exchangeBanner}>
+            <Text style={styles.exchangeBannerText}>
+              You're viewing {activeExchangeLabel}. Live data feeds are not connected yet.
+            </Text>
+          </View>
+        )}
 
         {/* Chart Panel */}
         <View style={[styles.panel, styles.chartPanel]}>
-          <TimeIntervalBar
-            timeInterval={timeInterval}
-            onTimeIntervalChange={handleTimeIntervalChange}
-            chartData={chartData}
-            activeIndicators={activeIndicators}
-            onToggleIndicator={handleToggleIndicator}
-          />
+          {isHyperliquid ? (
+            <TimeIntervalBar
+              timeInterval={timeInterval}
+              onTimeIntervalChange={handleTimeIntervalChange}
+              chartData={chartData}
+              activeIndicators={activeIndicators}
+              onToggleIndicator={handleToggleIndicator}
+            />
+          ) : (
+            <View style={styles.exchangePlaceholder}>
+              <Text style={styles.exchangePlaceholderText}>
+                {activeExchangeLabel} chart data will appear here once connected.
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Order Book / Recent Trades Panel */}
@@ -130,24 +220,34 @@ export default function TradingInterface({ selectedMarket, onOpenTradingForm }: 
             onTabChange={handleTabChange}
           />
 
-          {activeTab === 'orderBook' && (
-            <OrderBook
-              bids={displayedBids}
-              asks={displayedAsks}
-              connectionState={connectionState}
-            />
-          )}
+          {isHyperliquid ? (
+            <>
+              {activeTab === 'orderBook' && (
+                <OrderBook
+                  bids={displayedBids}
+                  asks={displayedAsks}
+                  connectionState={connectionState}
+                />
+              )}
 
-          {activeTab === 'recentTrades' && (
-            <RecentTrades
-              trades={recentTrades}
-              connectionState={connectionState}
-            />
-          )}
+              {activeTab === 'recentTrades' && (
+                <RecentTrades
+                  trades={recentTrades}
+                  connectionState={connectionState}
+                />
+              )}
 
-          {activeTab === 'info' && (
+              {activeTab === 'info' && (
+                <View style={styles.tabContent}>
+                  <Text style={styles.tabContentText}>Info</Text>
+                </View>
+              )}
+            </>
+          ) : (
             <View style={styles.tabContent}>
-              <Text style={styles.tabContentText}>Info</Text>
+              <Text style={styles.tabContentText}>
+                {activeExchangeLabel} {activeContentTabLabel} data will appear once connected.
+              </Text>
             </View>
           )}
         </View>
@@ -185,11 +285,39 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: '#1E293B',
   },
+  exchangeTabs: {
+    backgroundColor: '#141926',
+  },
   chartPanel: {
     marginTop: 4,
   },
   dataPanel: {
     paddingBottom: 12,
+  },
+  exchangePlaceholder: {
+    paddingHorizontal: 16,
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
+  exchangePlaceholderText: {
+    color: '#6B7280',
+    fontSize: 12,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  exchangeBanner: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#111827',
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: '#1E293B',
+  },
+  exchangeBannerText: {
+    color: '#9CA3AF',
+    fontSize: 11,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   tabContent: {
     padding: 32,

@@ -21,7 +21,7 @@ function TabBarInner<T extends string>({
     trailing,
 }: TabBarProps<T>) {
     return (
-        <View style={styles.tabNavigation}>
+        <View style={styles.tabNavigation} accessibilityRole="tablist">
             {tabs.map((tab) => (
                 <TouchableOpacity
                     key={tab.key}
@@ -30,6 +30,9 @@ function TabBarInner<T extends string>({
                         activeTab === tab.key && styles.tabButtonActive,
                     ]}
                     onPress={() => onTabChange(tab.key)}
+                    accessibilityRole="tab"
+                    accessibilityState={{ selected: activeTab === tab.key }}
+                    accessibilityLabel={tab.label}
                 >
                     <Text
                         style={[
