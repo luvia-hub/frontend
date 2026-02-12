@@ -226,7 +226,7 @@ export default function MarketListScreen({ onMarketPress }: MarketListScreenProp
       try {
         // Fetch from all three exchanges in parallel
         const [hyperliquidData, dydxMarkets, gmxMarkets] = await Promise.all([
-          client.metaAndAssetCtxs().catch(() => [{ universe: [] }, []]),
+          client.metaAndAssetCtxs().catch(() => ({ meta: { universe: [] }, assetCtxs: [] })),
           fetchDydxMarkets(),
           fetchGmxMarkets(),
         ]);
@@ -236,12 +236,13 @@ export default function MarketListScreen({ onMarketPress }: MarketListScreenProp
         const allMarkets: Market[] = [];
 
         // Process Hyperliquid markets
-        const [meta, assetCtxs] = hyperliquidData;
-        const universe = meta.universe || [];
+        const meta = Array.isArray(hyperliquidData) ? hyperliquidData[0] : hyperliquidData.meta;
+        const assetCtxs = Array.isArray(hyperliquidData) ? hyperliquidData[1] : hyperliquidData.assetCtxs;
+        const universe = (meta && 'universe' in meta) ? meta.universe : [];
         const availableAssets = universe.filter((asset: any) => !asset.isDelisted);
 
         const ctxByName = new Map();
-        const count = Math.min(universe.length, assetCtxs.length);
+        const count = Math.min(universe.length, Array.isArray(assetCtxs) ? assetCtxs.length : 0);
         for (let i = 0; i < count; i++) {
           ctxByName.set(universe[i].name, assetCtxs[i]);
         }
