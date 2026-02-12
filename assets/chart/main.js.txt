@@ -1,0 +1,388 @@
+
+window.onerror = function (message, source, lineno, colno, error) {
+    if (window.ReactNativeWebView) {
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+            type: 'error',
+            data: message + ' at ' + source + ':' + lineno + ':' + colno
+        }));
+    }
+};
+function log(msg) {
+    if (window.ReactNativeWebView) {
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+            type: 'log',
+            data: msg
+        }));
+    }
+}
+
+let chart = null;
+
+function initChart() {
+    if (!window.klinecharts) {
+        log('klinecharts not found yet, retrying...');
+        setTimeout(initChart, 100);
+        return;
+    }
+    log('klinecharts found, initializing...');
+
+    try {
+        chart = window.klinecharts.init('chart');
+        log('chart initialized');
+
+        // Configure chart theme
+        // theme is injected globally
+        const isDark = window.theme === 'dark';
+
+        // Update body background color
+        document.body.style.backgroundColor = isDark ? '#0A0E17' : '#FFFFFF';
+
+        chart.setStyles({
+            grid: {
+                show: true,
+                horizontal: {
+                    show: true,
+                    size: 1,
+                    color: isDark ? '#1E293B' : '#E5E7EB',
+                    style: 'solid',
+                },
+                vertical: {
+                    show: true,
+                    size: 1,
+                    color: isDark ? '#1E293B' : '#E5E7EB',
+                    style: 'solid',
+                },
+            },
+            candle: {
+                type: 'candle_solid',
+                bar: {
+                    upColor: '#22C55E',
+                    downColor: '#EF4444',
+                    upBorderColor: '#22C55E',
+                    downBorderColor: '#EF4444',
+                    upWickColor: '#22C55E',
+                    downWickColor: '#EF4444',
+                },
+                tooltip: {
+                    showRule: 'none',
+                    showType: 'standard',
+                    text: {
+                        size: 12,
+                        family: 'Arial',
+                        weight: 'normal',
+                        color: isDark ? '#9CA3AF' : '#6B7280',
+                    },
+                },
+                priceMark: {
+                    show: true,
+                    high: {
+                        show: true,
+                        color: isDark ? '#9CA3AF' : '#6B7280',
+                        textMargin: 5,
+                        textSize: 10,
+                        textFamily: 'Arial',
+                        textWeight: 'normal',
+                    },
+                    low: {
+                        show: true,
+                        color: isDark ? '#9CA3AF' : '#6B7280',
+                        textMargin: 5,
+                        textSize: 10,
+                        textFamily: 'Arial',
+                        textWeight: 'normal',
+                    },
+                    last: {
+                        show: true,
+                        upColor: '#22C55E',
+                        downColor: '#EF4444',
+                        noChangeColor: isDark ? '#9CA3AF' : '#6B7280',
+                        line: {
+                            show: true,
+                            style: 'dashed',
+                            dashValue: [4, 4],
+                            size: 1,
+                            color: '#3B82F6',
+                        },
+                        text: {
+                            show: true,
+                            size: 12,
+                            paddingLeft: 4,
+                            paddingTop: 4,
+                            paddingRight: 4,
+                            paddingBottom: 4,
+                            color: '#FFFFFF',
+                            family: 'Arial',
+                            weight: 'normal',
+                            borderRadius: 2,
+                        },
+                    },
+                },
+            },
+            indicator: {
+                tooltip: {
+                    showRule: 'always',
+                    showType: 'standard',
+                    text: {
+                        size: 12,
+                        family: 'Arial',
+                        weight: 'normal',
+                        color: isDark ? '#9CA3AF' : '#6B7280',
+                    },
+                },
+            },
+            xAxis: {
+                show: true,
+                size: 'auto',
+                axisLine: {
+                    show: true,
+                    color: isDark ? '#334155' : '#D1D5DB',
+                    size: 1,
+                },
+                tickText: {
+                    show: true,
+                    color: isDark ? '#9CA3AF' : '#6B7280',
+                    size: 12,
+                    family: 'Arial',
+                    weight: 'normal',
+                    marginStart: 4,
+                    marginEnd: 4,
+                },
+                tickLine: {
+                    show: true,
+                    size: 1,
+                    length: 3,
+                    color: isDark ? '#334155' : '#D1D5DB',
+                },
+            },
+            yAxis: {
+                show: true,
+                size: 'auto',
+                position: 'right',
+                type: 'normal',
+                inside: false,
+                reverse: false,
+                axisLine: {
+                    show: true,
+                    color: isDark ? '#334155' : '#D1D5DB',
+                    size: 1,
+                },
+                tickText: {
+                    show: true,
+                    color: isDark ? '#9CA3AF' : '#6B7280',
+                    size: 12,
+                    family: 'Arial',
+                    weight: 'normal',
+                    marginStart: 4,
+                    marginEnd: 4,
+                },
+                tickLine: {
+                    show: true,
+                    size: 1,
+                    length: 3,
+                    color: isDark ? '#334155' : '#D1D5DB',
+                },
+            },
+            crosshair: {
+                show: true,
+                horizontal: {
+                    show: true,
+                    line: {
+                        show: true,
+                        style: 'dashed',
+                        dashValue: [4, 2],
+                        size: 1,
+                        color: '#3B82F6',
+                    },
+                    text: {
+                        show: true,
+                        color: '#FFFFFF',
+                        size: 12,
+                        family: 'Arial',
+                        weight: 'normal',
+                        paddingLeft: 4,
+                        paddingRight: 4,
+                        paddingTop: 4,
+                        paddingBottom: 4,
+                        borderSize: 1,
+                        borderColor: '#3B82F6',
+                        borderRadius: 2,
+                        backgroundColor: '#3B82F6',
+                    },
+                },
+                vertical: {
+                    show: true,
+                    line: {
+                        show: true,
+                        style: 'dashed',
+                        dashValue: [4, 2],
+                        size: 1,
+                        color: '#3B82F6',
+                    },
+                    text: {
+                        show: true,
+                        color: '#FFFFFF',
+                        size: 12,
+                        family: 'Arial',
+                        weight: 'normal',
+                        paddingLeft: 4,
+                        paddingRight: 4,
+                        paddingTop: 4,
+                        paddingBottom: 4,
+                        borderSize: 1,
+                        borderColor: '#3B82F6',
+                        borderRadius: 2,
+                        backgroundColor: '#3B82F6',
+                    },
+                },
+            },
+        });
+
+        // Indicators will be synced via window.syncIndicators after 'ready' message
+
+        // Subscribe to crosshair events
+        chart.subscribeAction('onCrosshairChange', (data) => {
+            try {
+                if (window.ReactNativeWebView) {
+                    window.ReactNativeWebView.postMessage(JSON.stringify({
+                        type: 'crosshair',
+                        data: data,
+                    }));
+                }
+            } catch (error) {
+                console.error('Failed to send crosshair event', error);
+            }
+        });
+
+        // Signal that chart is ready
+        if (window.ReactNativeWebView) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'ready',
+            }));
+        }
+    } catch (e) {
+        log('Error initializing chart: ' + e.message);
+    }
+}
+
+// Main-pane indicators overlay on candle_pane; sub-pane indicators get their own pane
+var MAIN_INDICATORS = ['MA', 'EMA', 'BOLL'];
+var activeSubPanes = {}; // name -> paneId
+
+window.syncIndicators = function (indicators) {
+    if (!chart) { log('syncIndicators: chart not ready'); return; }
+    try {
+        var desired = {};
+        for (var i = 0; i < indicators.length; i++) { desired[indicators[i]] = true; }
+
+        // Remove indicators that are no longer active
+        var allKnown = ['MA', 'EMA', 'BOLL', 'RSI', 'MACD', 'VOL', 'KDJ'];
+        for (var j = 0; j < allKnown.length; j++) {
+            var name = allKnown[j];
+            if (!desired[name]) {
+                if (MAIN_INDICATORS.indexOf(name) >= 0) {
+                    chart.removeIndicator('candle_pane', name);
+                } else if (activeSubPanes[name]) {
+                    chart.removeIndicator(activeSubPanes[name], name);
+                    delete activeSubPanes[name];
+                }
+            }
+        }
+
+        // Add indicators that are newly active
+        for (var k = 0; k < indicators.length; k++) {
+            var ind = indicators[k];
+            if (MAIN_INDICATORS.indexOf(ind) >= 0) {
+                chart.createIndicator(ind, false, { id: 'candle_pane' });
+            } else if (!activeSubPanes[ind]) {
+                var paneId = chart.createIndicator(ind, false, { height: 80 });
+                if (paneId) { activeSubPanes[ind] = paneId; }
+            }
+        }
+    } catch (e) {
+        log('Error syncing indicators: ' + e.message);
+    }
+};
+
+window.updateChartData = function (data) {
+    if (chart && Array.isArray(data)) {
+        try {
+            // Get current data list from chart
+            var currentDataList = chart.getDataList();
+            var lastCurrentData = currentDataList && currentDataList.length > 0 
+                ? currentDataList[currentDataList.length - 1] 
+                : null;
+
+            // Check if this is an incremental update or a full reload
+            // Logic:
+            // 1. If no current data, full load is needed.
+            // 2. If incoming data is a single point (or very few) relative to history, check if it appends/updates.
+            //    BUT: The bridge sends the *entire* array every time currently? 
+            //    Let's check the incoming `data` length. 
+            //    If `data` is the FULL list, we need to extract the new part.
+            
+            // Wait, looking at KLineChartWebView.tsx line 79: `const dataString = JSON.stringify(data);`
+            // It seems we sending the WHOLE data array every time. This is inefficient but it is what it is for now.
+            // To prevent reset, we should check if the new data is just an update of the last candle 
+            // or a new candle appended to the EXISTING dataset.
+
+            if (lastCurrentData && data.length > 0) {
+                var newLastData = data[data.length - 1];
+                
+                // If the new dataset is significantly different in length (e.g. timeframe change), 
+                // or the last timestamp is OLDER (historical load?), use applyNewData.
+                // Here we assume `data` contains the full history + new updates.
+                
+                // transform: check if we can just update the last point
+                // The `klinecharts` library `updateData` takes a single k-line data object.
+                // If we pass an array to `applyNewData`, it resets.
+                // We need to feed `updateData` correctly.
+                
+                // Heuristic: If the incoming data matches the current data length or is +1, 
+                // AND the timestamps match up to the end, it's an update.
+                
+                // Optimization: Just check the last few items? 
+                // Actually, if we are receiving the FULL array, we can't easily identifying "just an update" 
+                // effectively without comparing everything, which is slow.
+                // HOWEVER, the user issue is "reset when drag". `applyNewData` resets the viewport.
+                // `updateData` does NOT reset the viewport.
+                
+                // Let's try to detect if it's the SAME dataset with just the last candle updated.
+                var isUpdate = false;
+                if (data.length === currentDataList.length) {
+                    // Start of list matches?
+                    if (data[0].timestamp === currentDataList[0].timestamp) {
+                        isUpdate = true;
+                    }
+                } else if (data.length === currentDataList.length + 1) {
+                     if (data[0].timestamp === currentDataList[0].timestamp) {
+                        isUpdate = true;
+                    }
+                }
+
+                if (isUpdate) {
+                    // It's likely just a real-time update. 
+                    // Use updateData with the LAST item from the new data.
+                    // verify timestamp is >= last current timestamp
+                    if (newLastData.timestamp >= lastCurrentData.timestamp) {
+                         chart.updateData(newLastData);
+                         return; // Done
+                    }
+                }
+            }
+
+            // Fallback to full update if we couldn't detect a simple incremental update
+            chart.applyNewData(data);
+        } catch (e) {
+            log('Error updating chart data: ' + e.message);
+        }
+    } else {
+        log('updateChartData called but chart not ready or data invalid');
+    }
+};
+
+// Initialize chart when DOM is ready
+if (typeof document !== 'undefined' && document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initChart);
+} else {
+    initChart();
+}

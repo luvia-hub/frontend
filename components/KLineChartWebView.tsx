@@ -1,6 +1,8 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
+import { Asset } from 'expo-asset';
+import * as FileSystem from 'expo-file-system/legacy';
 
 // @ts-ignore
 import { KLINE_CHARTS_LIBRARY_JS } from './KLineChartLibrary';
@@ -42,34 +44,66 @@ export default function KLineChartWebView({
 }: KLineChartWebViewProps) {
   const webViewRef = useRef<WebView>(null);
   const [isLoading, setIsLoading] = useState(true);
-  // console.log('data', data);
+  const [htmlContent, setHtmlContent] = useState<string | null>(null);
 
   useEffect(() => {
-    if (webViewRef.current) {
+    const loadAssets = async () => {
+      try {
+        const indexHtmlAsset = Asset.fromModule(require('../assets/chart/index.html'));
+        const mainJsAsset = Asset.fromModule(require('../assets/chart/main.js.txt'));
+
+        await Promise.all([indexHtmlAsset.downloadAsync(), mainJsAsset.downloadAsync()]);
+
+        if (indexHtmlAsset.localUri && mainJsAsset.localUri) {
+          const indexHtml = await FileSystem.readAsStringAsync(indexHtmlAsset.localUri);
+          const mainJs = await FileSystem.readAsStringAsync(mainJsAsset.localUri);
+
+          const combinedHtml = indexHtml
+            .replace('<!-- KLineChart Library will be injected here -->', `<script>${KLINE_CHARTS_LIBRARY_JS}</script>`)
+            .replace('<!-- Main Logic will be injected here -->', `<script>window.theme='${theme}';</script><script>${mainJs}</script>`);
+
+          setHtmlContent(combinedHtml);
+        } else {
+          console.error('Failed to download chart assets: localUri is missing');
+        }
+      } catch (e) {
+        console.error('Failed to load chart assets', e);
+      }
+    };
+    loadAssets();
+  }, [theme]);
+
+  // Update data when chart is ready or data changes
+  useEffect(() => {
+    if (webViewRef.current && !isLoading) {
       const dataString = JSON.stringify(data);
-      const script = `window.updateChartData(${dataString}); true;`;
+      const script = `window.updateChartData && window.updateChartData(${dataString}); true;`;
       webViewRef.current.injectJavaScript(script);
     }
-  }, [data]);
+  }, [data, isLoading]);
 
+  // Update indicators when chart is ready or indicators change
   useEffect(() => {
-    if (webViewRef.current) {
+    if (webViewRef.current && !isLoading) {
       const indicatorsString = JSON.stringify(activeIndicators);
       const script = `window.syncIndicators && window.syncIndicators(${indicatorsString}); true;`;
       webViewRef.current.injectJavaScript(script);
     }
-  }, [activeIndicators]);
+  }, [activeIndicators, isLoading]);
 
   const handleMessage = (event: WebViewMessageEvent) => {
     try {
       const message = JSON.parse(event.nativeEvent.data);
       if (message.type === 'ready') {
+        setIsLoading(false);
         // Sync indicators on chart ready
         const indicatorsString = JSON.stringify(activeIndicators);
         webViewRef.current?.injectJavaScript(`window.syncIndicators && window.syncIndicators(${indicatorsString}); true;`);
+
+        // Initial data load if available
         if (data.length > 0) {
           const dataString = JSON.stringify(data);
-          const script = `window.updateChartData(${dataString}); true;`;
+          const script = `window.updateChartData && window.updateChartData(${dataString}); true;`;
           webViewRef.current?.injectJavaScript(script);
         }
       } else if (message.type === 'crosshair' && onCrosshairChange) {
@@ -84,358 +118,15 @@ export default function KLineChartWebView({
     }
   };
 
-  const htmlContent = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    html, body {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background-color: ${theme === 'dark' ? '#0A0E17' : '#FFFFFF'};
-    }
-    #chart {
-      width: 100vw;
-      height: 100vh;
-    }
-  </style>
-</head>
-<body style="background-color: '#FFFFFF';">
-  <div id="chart"></div>
-  <script>
-    ${KLINE_CHARTS_LIBRARY_JS}
-  </script>
-  <script>
-    window.onerror = function(message, source, lineno, colno, error) {
-      if (window.ReactNativeWebView) {
-        window.ReactNativeWebView.postMessage(JSON.stringify({
-          type: 'error',
-          data: message + ' at ' + source + ':' + lineno + ':' + colno
-        }));
-      }
-    };
-    function log(msg) {
-      if (window.ReactNativeWebView) {
-        window.ReactNativeWebView.postMessage(JSON.stringify({
-          type: 'log',
-          data: msg
-        }));
-      }
-    }
-  </script>
-  <script>
-    let chart = null;
-
-    function initChart() {
-      if (!window.klinecharts) {
-        log('klinecharts not found yet, retrying...');
-        setTimeout(initChart, 100);
-        return;
-      }
-      log('klinecharts found, initializing...');
-
-      try {
-        chart = window.klinecharts.init('chart');
-        log('chart initialized');
-
-        // Configure chart theme
-        const isDark = ${theme === 'dark'};
-        chart.setStyles({
-          grid: {
-            show: true,
-            horizontal: {
-              show: true,
-              size: 1,
-              color: isDark ? '#1E293B' : '#E5E7EB',
-              style: 'solid',
-            },
-            vertical: {
-              show: true,
-              size: 1,
-              color: isDark ? '#1E293B' : '#E5E7EB',
-              style: 'solid',
-            },
-          },
-          candle: {
-            type: 'candle_solid',
-            bar: {
-              upColor: '#22C55E',
-              downColor: '#EF4444',
-              upBorderColor: '#22C55E',
-              downBorderColor: '#EF4444',
-              upWickColor: '#22C55E',
-              downWickColor: '#EF4444',
-            },
-            tooltip: {
-              showRule: 'none',
-              showType: 'standard',
-              text: {
-                size: 12,
-                family: 'Arial',
-                weight: 'normal',
-                color: isDark ? '#9CA3AF' : '#6B7280',
-              },
-            },
-            priceMark: {
-              show: true,
-              high: {
-                show: true,
-                color: isDark ? '#9CA3AF' : '#6B7280',
-                textMargin: 5,
-                textSize: 10,
-                textFamily: 'Arial',
-                textWeight: 'normal',
-              },
-              low: {
-                show: true,
-                color: isDark ? '#9CA3AF' : '#6B7280',
-                textMargin: 5,
-                textSize: 10,
-                textFamily: 'Arial',
-                textWeight: 'normal',
-              },
-              last: {
-                show: true,
-                upColor: '#22C55E',
-                downColor: '#EF4444',
-                noChangeColor: isDark ? '#9CA3AF' : '#6B7280',
-                line: {
-                  show: true,
-                  style: 'dashed',
-                  dashValue: [4, 4],
-                  size: 1,
-                  color: '#3B82F6',
-                },
-                text: {
-                  show: true,
-                  size: 12,
-                  paddingLeft: 4,
-                  paddingTop: 4,
-                  paddingRight: 4,
-                  paddingBottom: 4,
-                  color: '#FFFFFF',
-                  family: 'Arial',
-                  weight: 'normal',
-                  borderRadius: 2,
-                },
-              },
-            },
-          },
-          indicator: {
-            tooltip: {
-              showRule: 'always',
-              showType: 'standard',
-              text: {
-                size: 12,
-                family: 'Arial',
-                weight: 'normal',
-                color: isDark ? '#9CA3AF' : '#6B7280',
-              },
-            },
-          },
-          xAxis: {
-            show: true,
-            size: 'auto',
-            axisLine: {
-              show: true,
-              color: isDark ? '#334155' : '#D1D5DB',
-              size: 1,
-            },
-            tickText: {
-              show: true,
-              color: isDark ? '#9CA3AF' : '#6B7280',
-              size: 12,
-              family: 'Arial',
-              weight: 'normal',
-              marginStart: 4,
-              marginEnd: 4,
-            },
-            tickLine: {
-              show: true,
-              size: 1,
-              length: 3,
-              color: isDark ? '#334155' : '#D1D5DB',
-            },
-          },
-          yAxis: {
-            show: true,
-            size: 'auto',
-            position: 'right',
-            type: 'normal',
-            inside: false,
-            reverse: false,
-            axisLine: {
-              show: true,
-              color: isDark ? '#334155' : '#D1D5DB',
-              size: 1,
-            },
-            tickText: {
-              show: true,
-              color: isDark ? '#9CA3AF' : '#6B7280',
-              size: 12,
-              family: 'Arial',
-              weight: 'normal',
-              marginStart: 4,
-              marginEnd: 4,
-            },
-            tickLine: {
-              show: true,
-              size: 1,
-              length: 3,
-              color: isDark ? '#334155' : '#D1D5DB',
-            },
-          },
-          crosshair: {
-            show: true,
-            horizontal: {
-              show: true,
-              line: {
-                show: true,
-                style: 'dashed',
-                dashValue: [4, 2],
-                size: 1,
-                color: '#3B82F6',
-              },
-              text: {
-                show: true,
-                color: '#FFFFFF',
-                size: 12,
-                family: 'Arial',
-                weight: 'normal',
-                paddingLeft: 4,
-                paddingRight: 4,
-                paddingTop: 4,
-                paddingBottom: 4,
-                borderSize: 1,
-                borderColor: '#3B82F6',
-                borderRadius: 2,
-                backgroundColor: '#3B82F6',
-              },
-            },
-            vertical: {
-              show: true,
-              line: {
-                show: true,
-                style: 'dashed',
-                dashValue: [4, 2],
-                size: 1,
-                color: '#3B82F6',
-              },
-              text: {
-                show: true,
-                color: '#FFFFFF',
-                size: 12,
-                family: 'Arial',
-                weight: 'normal',
-                paddingLeft: 4,
-                paddingRight: 4,
-                paddingTop: 4,
-                paddingBottom: 4,
-                borderSize: 1,
-                borderColor: '#3B82F6',
-                borderRadius: 2,
-                backgroundColor: '#3B82F6',
-              },
-            },
-          },
-        });
-
-        // Indicators will be synced via window.syncIndicators after 'ready' message
-
-        // Subscribe to crosshair events
-        chart.subscribeAction('onCrosshairChange', (data) => {
-          try {
-            if (window.ReactNativeWebView) {
-              window.ReactNativeWebView.postMessage(JSON.stringify({
-                type: 'crosshair',
-                data: data,
-              }));
-            }
-          } catch (error) {
-            console.error('Failed to send crosshair event', error);
-          }
-        });
-
-        // Signal that chart is ready
-        if (window.ReactNativeWebView) {
-          window.ReactNativeWebView.postMessage(JSON.stringify({
-            type: 'ready',
-          }));
-        }
-      } catch (e) {
-        log('Error initializing chart: ' + e.message);
-      }
-    }
-
-    // Main-pane indicators overlay on candle_pane; sub-pane indicators get their own pane
-    var MAIN_INDICATORS = ['MA', 'EMA', 'BOLL'];
-    var activeSubPanes = {}; // name -> paneId
-
-    window.syncIndicators = function(indicators) {
-      if (!chart) { log('syncIndicators: chart not ready'); return; }
-      try {
-        var desired = {};
-        for (var i = 0; i < indicators.length; i++) { desired[indicators[i]] = true; }
-
-        // Remove indicators that are no longer active
-        var allKnown = ['MA','EMA','BOLL','RSI','MACD','VOL','KDJ'];
-        for (var j = 0; j < allKnown.length; j++) {
-          var name = allKnown[j];
-          if (!desired[name]) {
-            if (MAIN_INDICATORS.indexOf(name) >= 0) {
-              chart.removeIndicator('candle_pane', name);
-            } else if (activeSubPanes[name]) {
-              chart.removeIndicator(activeSubPanes[name], name);
-              delete activeSubPanes[name];
-            }
-          }
-        }
-
-        // Add indicators that are newly active
-        for (var k = 0; k < indicators.length; k++) {
-          var ind = indicators[k];
-          if (MAIN_INDICATORS.indexOf(ind) >= 0) {
-            chart.createIndicator(ind, false, { id: 'candle_pane' });
-          } else if (!activeSubPanes[ind]) {
-            var paneId = chart.createIndicator(ind, false, { height: 80 });
-            if (paneId) { activeSubPanes[ind] = paneId; }
-          }
-        }
-      } catch (e) {
-        log('Error syncing indicators: ' + e.message);
-      }
-    };
-
-    window.updateChartData = function(data) {
-      if (chart && Array.isArray(data)) {
-        try {
-          chart.applyNewData(data);
-        } catch (e) {
-          log('Error updating chart data: ' + e.message);
-        }
-      } else {
-        log('updateChartData called but chart not ready or data invalid');
-      }
-    };
-
-    // Initialize chart when DOM is ready
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initChart);
-    } else {
-      initChart();
-    }
-  </script>
-</body>
-</html>
-  `;
+  if (!htmlContent) {
+    return (
+      <View style={[styles.container, { height, width: width || '100%' }]}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#3B82F6" />
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { height }]}>
@@ -446,14 +137,13 @@ export default function KLineChartWebView({
       )}
       <WebView
         ref={webViewRef}
-        source={{ html: htmlContent }}
+        source={{ html: htmlContent, baseUrl: '' }}
         style={[styles.webview, { width: width || '100%', height }]}
         javaScriptEnabled={true}
         domStorageEnabled={true}
         scrollEnabled={false}
         androidLayerType="hardware"
         onMessage={handleMessage}
-        onLoadEnd={() => setIsLoading(false)}
         originWhitelist={['*']}
       />
     </View>
