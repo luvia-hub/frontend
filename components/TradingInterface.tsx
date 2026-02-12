@@ -16,17 +16,29 @@ import { DEFAULT_PAIR, MAX_ORDER_LEVELS, DEFAULT_ACTIVE_INDICATORS } from './tra
 import { loadActiveIndicators, saveActiveIndicators } from '../utils/indicatorStorage';
 import { loadSelectedExchange, saveSelectedExchange } from '../utils/exchangeStorage';
 
+const CONTENT_TAB_LABELS: Record<TabType, string> = {
+  orderBook: 'Order Book',
+  recentTrades: 'Recent Trades',
+  info: 'Info',
+};
+
 // Tab definitions (stable references)
 const CONTENT_TABS: { key: TabType; label: string }[] = [
-  { key: 'orderBook', label: 'Order Book' },
-  { key: 'recentTrades', label: 'Recent Trades' },
-  { key: 'info', label: 'Info' },
+  { key: 'orderBook', label: CONTENT_TAB_LABELS.orderBook },
+  { key: 'recentTrades', label: CONTENT_TAB_LABELS.recentTrades },
+  { key: 'info', label: CONTENT_TAB_LABELS.info },
 ];
 
+const EXCHANGE_LABELS: Record<ExchangeType, string> = {
+  hyperliquid: 'Hyperliquid',
+  dydx: 'dYdX',
+  gmx: 'GMX',
+};
+
 const EXCHANGE_TABS: { key: ExchangeType; label: string }[] = [
-  { key: 'hyperliquid', label: 'Hyperliquid' },
-  { key: 'dydx', label: 'dYdX' },
-  { key: 'gmx', label: 'GMX' },
+  { key: 'hyperliquid', label: EXCHANGE_LABELS.hyperliquid },
+  { key: 'dydx', label: EXCHANGE_LABELS.dydx },
+  { key: 'gmx', label: EXCHANGE_LABELS.gmx },
 ];
 
 interface TradingInterfaceProps {
@@ -40,21 +52,36 @@ export default function TradingInterface({ selectedMarket, onOpenTradingForm }: 
   const [timeInterval, setTimeInterval] = useState<TimeInterval>('15m');
   const [activeIndicators, setActiveIndicators] = useState<IndicatorType[]>(DEFAULT_ACTIVE_INDICATORS);
 
+  const isExchangeLoaded = React.useRef(false);
+  const shouldSkipNextExchangeSave = React.useRef(false);
   useEffect(() => {
-    loadSelectedExchange().then((saved) => {
-      if (saved !== null) {
-        setActiveExchange(saved);
+    const loadExchange = async () => {
+      try {
+        const saved = await loadSelectedExchange();
+        if (saved !== null) {
+          shouldSkipNextExchangeSave.current = true;
+          setActiveExchange(saved);
+        }
+      } catch (error) {
+        console.warn('Failed to load selected exchange:', error);
+      } finally {
+        isExchangeLoaded.current = true;
       }
-    });
+    };
+    loadExchange();
   }, []);
 
-  const isInitialExchangeMount = React.useRef(true);
   useEffect(() => {
-    if (isInitialExchangeMount.current) {
-      isInitialExchangeMount.current = false;
+    if (!isExchangeLoaded.current) {
       return;
     }
-    saveSelectedExchange(activeExchange);
+    if (shouldSkipNextExchangeSave.current) {
+      shouldSkipNextExchangeSave.current = false;
+      return;
+    }
+    saveSelectedExchange(activeExchange).catch((error) => {
+      console.warn('Failed to save selected exchange:', error);
+    });
   }, [activeExchange]);
 
   // Load saved indicators on mount
@@ -104,14 +131,8 @@ export default function TradingInterface({ selectedMarket, onOpenTradingForm }: 
   );
 
   const isHyperliquid = activeExchange === 'hyperliquid';
-  const activeExchangeLabel = useMemo(
-    () => EXCHANGE_TABS.find((exchange) => exchange.key === activeExchange)?.label ?? 'Exchange',
-    [activeExchange],
-  );
-  const activeContentTabLabel = useMemo(
-    () => CONTENT_TABS.find((tab) => tab.key === activeTab)?.label ?? 'Data',
-    [activeTab],
-  );
+  const activeExchangeLabel = useMemo(() => EXCHANGE_LABELS[activeExchange], [activeExchange]);
+  const activeContentTabLabel = useMemo(() => CONTENT_TAB_LABELS[activeTab], [activeTab]);
 
   // Stable callbacks for child components
   const handleTabChange = useCallback((tab: TabType) => setActiveTab(tab), []);
@@ -167,7 +188,7 @@ export default function TradingInterface({ selectedMarket, onOpenTradingForm }: 
         ) : (
           <View style={styles.exchangeBanner}>
             <Text style={styles.exchangeBannerText}>
-              You&apos;re viewing {activeExchangeLabel}. Live data feeds are not connected yet.
+              You're viewing {activeExchangeLabel}. Live data feeds are not connected yet.
             </Text>
           </View>
         )}
