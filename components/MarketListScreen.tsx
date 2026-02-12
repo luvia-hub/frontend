@@ -10,6 +10,8 @@ import {
 } from 'react-native';
 import { Search, SlidersHorizontal, Star, TrendingUp, TrendingDown, Copy } from 'lucide-react-native';
 import { PublicClient, HttpTransport } from '@far1s/hyperliquid';
+import { fetchDydxMarkets } from '../services/dydx';
+import { fetchGmxMarkets } from '../services/gmx';
 
 interface Market {
   id: string;
@@ -17,6 +19,17 @@ interface Market {
   name: string;
   price: number;
   priceChange: number;
+  exchange: string; // The DEX this market is from
+  fundingRate: number; // Funding rate for this market
+  volatile?: boolean;
+}
+
+interface GroupedMarket {
+  id: string;
+  tokenPair: string; // e.g., "BTC", "ETH"
+  markets: Market[]; // Array of markets from different DEXs
+  bestPrice: number; // Best price across all DEXs
+  bestPriceChange: number; // Price change from best DEX
   bestRate: {
     exchange: string;
     rate: number;
@@ -28,6 +41,8 @@ interface Market {
 
 
 const HYPERLIQUID_EXCHANGE = 'Hyperliquid';
+const DYDX_EXCHANGE = 'dYdX';
+const GMX_EXCHANGE = 'GMX';
 const VOLATILITY_THRESHOLD = 5;
 const PRICE_REFRESH_MS = 10000;
 
@@ -38,18 +53,17 @@ const OPACITY_LIGHT = '20'; // ~12% opacity for badge backgrounds
 
 type FilterTab = 'all' | 'favorites' | 'volatility' | 'funds';
 
-
-
-function createMarket(asset: any): Market {
-  return {
-    id: asset.name,
-    symbol: `${asset.name}-PERP`,
-    name: asset.name,
-    price: 0,
-    priceChange: 0,
-    bestRate: { exchange: HYPERLIQUID_EXCHANGE, rate: 0 },
-    volatile: false,
-  };
+/**
+ * Extract the base token pair from a market symbol
+ * Examples: "BTC-USD" -> "BTC", "BTC-PERP" -> "BTC", "ETH" -> "ETH"
+ */
+function extractTokenPair(symbol: string): string {
+  // Remove common suffixes
+  const clean = symbol
+    .replace(/-PERP$/i, '')
+    .replace(/-USD$/i, '')
+    .replace(/USD$/i, '');
+  return clean.toUpperCase();
 }
 
 function safeFloat(val: any): number | undefined {
@@ -86,57 +100,76 @@ function getAvatarColor(symbol: string): string {
 }
 
 interface MarketRowProps {
-  market: Market;
-  onPress?: (market: Market) => void;
+  market: GroupedMarket;
+  onPress?: (market: GroupedMarket) => void;
 }
 
 const MarketRow = React.memo(function MarketRow({ market, onPress }: MarketRowProps) {
-  const isPositive = market.priceChange > 0;
-  const isNeutral = market.priceChange === 0;
+  const isPositive = market.bestPriceChange > 0;
+  const isNeutral = market.bestPriceChange === 0;
   const priceColor = isNeutral ? '#9CA3AF' : isPositive ? '#22C55E' : '#EF4444';
   const PriceIcon = isPositive ? TrendingUp : TrendingDown;
 
   const isRatePositive = market.bestRate.rate >= 0;
   const rateColor = isRatePositive ? '#22C55E' : '#EF4444';
-  const avatarBg = getAvatarColor(market.symbol);
+  const avatarBg = getAvatarColor(market.tokenPair);
 
   return (
     <TouchableOpacity
       style={styles.marketRow}
       onPress={() => onPress?.(market)}
       accessibilityRole="button"
-      accessibilityLabel={`${market.symbol} at $${market.price}`}
+      accessibilityLabel={`${market.tokenPair} at $${market.bestPrice}`}
     >
       <View style={styles.marketLeft}>
         <View style={[styles.avatar, { backgroundColor: avatarBg }]}>
           <Text style={styles.avatarText}>
-            {market.symbol.substring(0, 3).toUpperCase()}
+            {market.tokenPair.substring(0, 3).toUpperCase()}
           </Text>
         </View>
         <View style={styles.marketInfo}>
           <View style={styles.symbolRow}>
-            <Text style={styles.symbolText}>{market.symbol}</Text>
+            <Text style={styles.symbolText}>{market.tokenPair}</Text>
             {market.volatile && (
               <View style={styles.volatileBadge}>
                 <Text style={styles.volatileText}>VOLATILE</Text>
               </View>
             )}
           </View>
-          <Text style={styles.nameText}>{market.name}</Text>
+          <View style={styles.exchangeBadgesRow}>
+            {market.markets.map((m, idx) => (
+              <View
+                key={idx}
+                style={[
+                  styles.miniExchangeBadge,
+                  { backgroundColor: getExchangeColor(m.exchange) + OPACITY_LIGHT },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.miniExchangeText,
+                    { color: getExchangeColor(m.exchange) },
+                  ]}
+                >
+                  {m.exchange}
+                </Text>
+              </View>
+            ))}
+          </View>
         </View>
       </View>
 
       <View style={styles.marketCenter}>
         <Text style={styles.priceText}>
-          ${market.price.toLocaleString('en-US', {
+          ${market.bestPrice.toLocaleString('en-US', {
             minimumFractionDigits: 2,
-            maximumFractionDigits: market.price < 1 ? 5 : 2,
+            maximumFractionDigits: market.bestPrice < 1 ? 5 : 2,
           })}
         </Text>
         <View style={styles.changeRow}>
           {!isNeutral && <PriceIcon size={12} color={priceColor} />}
           <Text style={[styles.changeText, { color: priceColor }]}>
-            {isPositive ? '+' : ''}{market.priceChange.toFixed(1)}%
+            {isPositive ? '+' : ''}{market.bestPriceChange.toFixed(1)}%
           </Text>
         </View>
       </View>
@@ -176,7 +209,7 @@ interface MarketListScreenProps {
 }
 
 export default function MarketListScreen({ onMarketPress }: MarketListScreenProps) {
-  const [markets, setMarkets] = useState<Market[]>([]);
+  const [groupedMarkets, setGroupedMarkets] = useState<GroupedMarket[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
 
@@ -191,56 +224,134 @@ export default function MarketListScreen({ onMarketPress }: MarketListScreenProp
 
     const updateMarketData = async () => {
       try {
-        // metaAndAssetCtxs returns [meta, assetCtxs]
-        const [meta, assetCtxs] = await client.metaAndAssetCtxs();
+        // Fetch from all three exchanges in parallel
+        const [hyperliquidData, dydxMarkets, gmxMarkets] = await Promise.all([
+          client.metaAndAssetCtxs().catch(() => [{ universe: [] }, []]),
+          fetchDydxMarkets(),
+          fetchGmxMarkets(),
+        ]);
 
         if (!isMounted) return;
 
-        const universe = meta.universe;
+        const allMarkets: Market[] = [];
+
+        // Process Hyperliquid markets
+        const [meta, assetCtxs] = hyperliquidData;
+        const universe = meta.universe || [];
         const availableAssets = universe.filter((asset: any) => !asset.isDelisted);
 
-        // Map contexts by asset name for O(1) lookup.
-        // The API returns universe and assetCtxs aligned by index.
         const ctxByName = new Map();
-        // Use the min length to be safe, though they should match
         const count = Math.min(universe.length, assetCtxs.length);
         for (let i = 0; i < count; i++) {
           ctxByName.set(universe[i].name, assetCtxs[i]);
         }
 
-        const newMarkets = availableAssets.map((asset: any) => {
-          let market = createMarket(asset);
+        availableAssets.forEach((asset: any) => {
           const ctx = ctxByName.get(asset.name);
+          const markPx = ctx ? safeFloat(ctx.markPx) : undefined;
+          const prevDayPx = ctx ? safeFloat(ctx.prevDayPx) : undefined;
+          const funding = ctx ? safeFloat(ctx.funding) : undefined;
 
-          if (ctx) {
-            const markPx = safeFloat(ctx.markPx);
-            const prevDayPx = safeFloat(ctx.prevDayPx);
-            const funding = safeFloat(ctx.funding);
-
-            if (markPx !== undefined) {
-              market.price = markPx;
-            }
-
-            if (prevDayPx !== undefined && prevDayPx > 0 && markPx !== undefined) {
-              market.priceChange = ((markPx - prevDayPx) / prevDayPx) * 100;
-            }
-
-            if (funding !== undefined) {
-              // Funding is usually an hourly rate or similar, depends on display preference.
-              // Existing code multiplied by 100.
-              market.bestRate.rate = funding * 100;
-            }
-
-            // Recalculate volatility
-            market.volatile = Math.abs(market.priceChange) >= VOLATILITY_THRESHOLD;
+          const price = markPx || 0;
+          let priceChange = 0;
+          if (prevDayPx && prevDayPx > 0 && markPx) {
+            priceChange = ((markPx - prevDayPx) / prevDayPx) * 100;
           }
 
-          return market;
+          allMarkets.push({
+            id: `${HYPERLIQUID_EXCHANGE}-${asset.name}`,
+            symbol: `${asset.name}-PERP`,
+            name: asset.name,
+            price,
+            priceChange,
+            exchange: HYPERLIQUID_EXCHANGE,
+            fundingRate: funding ? funding * 100 : 0,
+            volatile: Math.abs(priceChange) >= VOLATILITY_THRESHOLD,
+          });
         });
 
-        setMarkets(newMarkets);
+        // Process dYdX markets
+        dydxMarkets.forEach((market) => {
+          const price = safeFloat(market.oraclePrice) || 0;
+          const priceChange = safeFloat(market.priceChange24H) || 0;
+          const fundingRate = safeFloat(market.nextFundingRate) || 0;
+          const tokenPair = extractTokenPair(market.ticker);
+
+          allMarkets.push({
+            id: `${DYDX_EXCHANGE}-${market.ticker}`,
+            symbol: market.ticker,
+            name: tokenPair,
+            price,
+            priceChange: priceChange * 100, // Convert to percentage
+            exchange: DYDX_EXCHANGE,
+            fundingRate: fundingRate * 100, // Convert to percentage
+            volatile: Math.abs(priceChange * 100) >= VOLATILITY_THRESHOLD,
+          });
+        });
+
+        // Process GMX markets
+        gmxMarkets.forEach((market, index) => {
+          // GMX market data structure is different, we'll use placeholder values
+          // In production, you'd fetch additional price data
+          const tokenPair = market.marketSymbol || `Market-${index}`;
+
+          allMarkets.push({
+            id: `${GMX_EXCHANGE}-${market.marketToken}`,
+            symbol: tokenPair,
+            name: tokenPair,
+            price: 0, // GMX API doesn't provide price directly in this endpoint
+            priceChange: 0,
+            exchange: GMX_EXCHANGE,
+            fundingRate: 0,
+            volatile: false,
+          });
+        });
+
+        // Group markets by token pair
+        const marketsByPair = new Map<string, Market[]>();
+        allMarkets.forEach((market) => {
+          const tokenPair = extractTokenPair(market.name);
+          if (!marketsByPair.has(tokenPair)) {
+            marketsByPair.set(tokenPair, []);
+          }
+          marketsByPair.get(tokenPair)!.push(market);
+        });
+
+        // Create grouped markets
+        const grouped: GroupedMarket[] = [];
+        marketsByPair.forEach((markets, tokenPair) => {
+          // Find best price and funding rate
+          const validMarkets = markets.filter(m => m.price > 0);
+          if (validMarkets.length === 0) return; // Skip if no valid prices
+
+          const bestPriceMarket = validMarkets.reduce((best, current) =>
+            current.price < best.price ? current : best
+          );
+
+          const bestRateMarket = markets.reduce((best, current) =>
+            current.fundingRate > best.fundingRate ? current : best
+          );
+
+          grouped.push({
+            id: tokenPair,
+            tokenPair,
+            markets,
+            bestPrice: bestPriceMarket.price,
+            bestPriceChange: bestPriceMarket.priceChange,
+            bestRate: {
+              exchange: bestRateMarket.exchange,
+              rate: bestRateMarket.fundingRate,
+            },
+            volatile: validMarkets.some(m => m.volatile),
+          });
+        });
+
+        // Sort by token pair name
+        grouped.sort((a, b) => a.tokenPair.localeCompare(b.tokenPair));
+
+        setGroupedMarkets(grouped);
       } catch (error) {
-        console.warn('Failed to update Hyperliquid market data', error);
+        console.warn('Failed to update market data', error);
       }
     };
 
@@ -256,11 +367,10 @@ export default function MarketListScreen({ onMarketPress }: MarketListScreenProp
   const filteredMarkets = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
 
-    return markets.filter((market) => {
+    return groupedMarkets.filter((market) => {
       const matchesSearch =
         !normalizedQuery ||
-        market.symbol.toLowerCase().includes(normalizedQuery) ||
-        market.name.toLowerCase().includes(normalizedQuery);
+        market.tokenPair.toLowerCase().includes(normalizedQuery);
 
       if (activeFilter === 'volatility') {
         return matchesSearch && market.volatile;
@@ -268,9 +378,14 @@ export default function MarketListScreen({ onMarketPress }: MarketListScreenProp
 
       return matchesSearch;
     });
-  }, [activeFilter, markets, searchQuery]);
+  }, [activeFilter, groupedMarkets, searchQuery]);
 
-  const renderMarketRow = useCallback(({ item }: { item: Market }) => <MarketRow market={item} onPress={onMarketPress} />, [onMarketPress]);
+  const renderMarketRow = useCallback(({ item }: { item: GroupedMarket }) => (
+    <MarketRow 
+      market={item} 
+      onPress={(market) => onMarketPress?.({ symbol: market.tokenPair, name: market.tokenPair })}
+    />
+  ), [onMarketPress]);
 
   return (
     <View style={styles.container}>
@@ -681,6 +796,21 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
     fontSize: 12,
     fontWeight: '500',
+  },
+  exchangeBadgesRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+    marginTop: 2,
+  },
+  miniExchangeBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  miniExchangeText: {
+    fontSize: 9,
+    fontWeight: '700',
   },
   marketCenter: {
     flex: 1.5,
