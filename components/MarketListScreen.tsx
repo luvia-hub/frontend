@@ -137,9 +137,9 @@ const MarketRow = React.memo(function MarketRow({ market, onPress }: MarketRowPr
             )}
           </View>
           <View style={styles.exchangeBadgesRow}>
-            {market.markets.map((m, idx) => (
+            {market.markets.map((m) => (
               <View
-                key={idx}
+                key={m.id}
                 style={[
                   styles.miniExchangeBadge,
                   { backgroundColor: getExchangeColor(m.exchange) + OPACITY_LIGHT },
@@ -226,7 +226,7 @@ export default function MarketListScreen({ onMarketPress }: MarketListScreenProp
       try {
         // Fetch from all three exchanges in parallel
         const [hyperliquidData, dydxMarkets, gmxMarkets] = await Promise.all([
-          client.metaAndAssetCtxs().catch(() => ({ meta: { universe: [] }, assetCtxs: [] })),
+          client.metaAndAssetCtxs().catch(() => [{ universe: [] }, []]),
           fetchDydxMarkets(),
           fetchGmxMarkets(),
         ]);
@@ -236,15 +236,16 @@ export default function MarketListScreen({ onMarketPress }: MarketListScreenProp
         const allMarkets: Market[] = [];
 
         // Process Hyperliquid markets
-        const meta = Array.isArray(hyperliquidData) ? hyperliquidData[0] : hyperliquidData.meta;
-        const assetCtxs = Array.isArray(hyperliquidData) ? hyperliquidData[1] : hyperliquidData.assetCtxs;
+        const [meta, assetCtxs] = hyperliquidData;
         const universe = (meta && 'universe' in meta) ? meta.universe : [];
         const availableAssets = universe.filter((asset: any) => !asset.isDelisted);
 
         const ctxByName = new Map();
         const count = Math.min(universe.length, Array.isArray(assetCtxs) ? assetCtxs.length : 0);
         for (let i = 0; i < count; i++) {
-          ctxByName.set(universe[i].name, assetCtxs[i]);
+          if (Array.isArray(assetCtxs)) {
+            ctxByName.set(universe[i].name, assetCtxs[i]);
+          }
         }
 
         availableAssets.forEach((asset: any) => {
@@ -274,7 +275,9 @@ export default function MarketListScreen({ onMarketPress }: MarketListScreenProp
         // Process dYdX markets
         dydxMarkets.forEach((market) => {
           const price = safeFloat(market.oraclePrice) || 0;
+          // dYdX API returns priceChange24H as a decimal (e.g., 0.025 for 2.5%)
           const priceChange = safeFloat(market.priceChange24H) || 0;
+          // dYdX API returns nextFundingRate as a decimal per funding period
           const fundingRate = safeFloat(market.nextFundingRate) || 0;
           const tokenPair = extractTokenPair(market.ticker);
 
@@ -290,23 +293,9 @@ export default function MarketListScreen({ onMarketPress }: MarketListScreenProp
           });
         });
 
-        // Process GMX markets
-        gmxMarkets.forEach((market, index) => {
-          // GMX market data structure is different, we'll use placeholder values
-          // In production, you'd fetch additional price data
-          const tokenPair = market.marketSymbol || `Market-${index}`;
-
-          allMarkets.push({
-            id: `${GMX_EXCHANGE}-${market.marketToken}`,
-            symbol: tokenPair,
-            name: tokenPair,
-            price: 0, // GMX API doesn't provide price directly in this endpoint
-            priceChange: 0,
-            exchange: GMX_EXCHANGE,
-            fundingRate: 0,
-            volatile: false,
-          });
-        });
+        // GMX markets - Skip for now as the API doesn't provide price data directly
+        // TODO: Integrate GMX price data from additional endpoint or subgraph
+        // gmxMarkets are fetched but not processed until we have price data
 
         // Group markets by token pair
         const marketsByPair = new Map<string, Market[]>();
@@ -326,6 +315,8 @@ export default function MarketListScreen({ onMarketPress }: MarketListScreenProp
           if (validMarkets.length === 0) return; // Skip if no valid prices
 
           const bestPriceMarket = validMarkets.reduce((best, current) =>
+            // For perpetuals, show the lowest price as it represents the best buy price
+            // Note: Traders can go both long and short, but we display the best entry price
             current.price < best.price ? current : best
           );
 
@@ -381,12 +372,15 @@ export default function MarketListScreen({ onMarketPress }: MarketListScreenProp
     });
   }, [activeFilter, groupedMarkets, searchQuery]);
 
-  const renderMarketRow = useCallback(({ item }: { item: GroupedMarket }) => (
-    <MarketRow 
-      market={item} 
-      onPress={(market) => onMarketPress?.({ symbol: market.tokenPair, name: market.tokenPair })}
-    />
-  ), [onMarketPress]);
+  const renderMarketRow = useCallback(({ item }: { item: GroupedMarket }) => {
+    const handlePress = (market: GroupedMarket) => {
+      // Pass the market with the best price to the parent
+      const bestMarket = market.markets.find(m => m.price === market.bestPrice) || market.markets[0];
+      onMarketPress?.({ symbol: bestMarket.symbol, name: market.tokenPair });
+    };
+    
+    return <MarketRow market={item} onPress={handlePress} />;
+  }, [onMarketPress]);
 
   return (
     <View style={styles.container}>
