@@ -113,11 +113,29 @@ export default function TradingInterface({ selectedMarket, onOpenTradingForm }: 
   // Live data from dYdX
   const dydxData = useDydxData(selectedPair, timeInterval);
 
+  // Default empty data for unsupported exchanges
+  const emptyExchangeData = {
+    connectionState: 'loading' as const,
+    connectionError: null,
+    orderBook: null,
+    recentTrades: [],
+    chartData: [],
+  };
+
   // Select data based on active exchange
-  const { connectionState, connectionError, orderBook, recentTrades, chartData } = 
-    activeExchange === 'hyperliquid' ? hyperliquidData : 
-    activeExchange === 'dydx' ? dydxData : 
-    { connectionState: 'loading' as const, connectionError: null, orderBook: null, recentTrades: [], chartData: [] };
+  const getExchangeData = () => {
+    switch (activeExchange) {
+      case 'hyperliquid':
+        return hyperliquidData;
+      case 'dydx':
+        return dydxData;
+      case 'gmx':
+      default:
+        return emptyExchangeData;
+    }
+  };
+
+  const { connectionState, connectionError, orderBook, recentTrades, chartData } = getExchangeData();
 
   // Derived values
   const baseMarkPrice = 64230.5;

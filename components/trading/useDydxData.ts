@@ -1,8 +1,35 @@
 import { useEffect, useState } from 'react';
-import type { CandleData, ConnectionState, OrderBookState, TimeInterval, Trade } from './types';
+import type { CandleData, ConnectionState, OrderBookState, TimeInterval, Trade, OrderBookLevel } from './types';
 import { MAX_TRADES } from './types';
 import { parseOrderBookSide, parseTrades, toNumber } from './utils';
 import { DYDX_WEBSOCKET_URL, fetchDydxCandles, mapIntervalToResolution } from '../../services/dydx';
+
+export interface DydxData {
+    connectionState: ConnectionState;
+    connectionError: string | null;
+    orderBook: OrderBookState | null;
+    recentTrades: Trade[];
+    chartData: CandleData[];
+}
+
+interface DydxTradeData {
+    id?: string;
+    price: string;
+    size: string;
+    side: 'BUY' | 'SELL';
+    createdAt: string;
+}
+
+/**
+ * Helper function to calculate cumulative totals for order book levels
+ */
+function calculateCumulativeTotals(levels: OrderBookLevel[]): void {
+    let total = 0;
+    levels.forEach((level) => {
+        total += level.size;
+        level.total = total;
+    });
+}
 
 export interface DydxData {
     connectionState: ConnectionState;
@@ -140,17 +167,8 @@ export function useDydxData(
                             });
 
                             // Calculate cumulative totals
-                            let bidTotal = 0;
-                            parsedBids.forEach((bid: { price: number; size: number; total: number }) => {
-                                bidTotal += bid.size;
-                                bid.total = bidTotal;
-                            });
-
-                            let askTotal = 0;
-                            parsedAsks.forEach((ask: { price: number; size: number; total: number }) => {
-                                askTotal += ask.size;
-                                ask.total = askTotal;
-                            });
+                            calculateCumulativeTotals(parsedBids);
+                            calculateCumulativeTotals(parsedAsks);
 
                             setOrderBook({
                                 bids: parsedBids,
@@ -160,9 +178,9 @@ export function useDydxData(
 
                         // Trades updates
                         if (channel === 'v4_trades' && contents?.trades) {
-                            const tradesData = contents.trades;
+                            const tradesData = contents.trades as DydxTradeData[];
                             
-                            const parsedTrades: Trade[] = tradesData.map((trade: any, idx: number) => ({
+                            const parsedTrades: Trade[] = tradesData.map((trade, idx) => ({
                                 id: trade.id || `${Date.now()}-${idx}`,
                                 price: parseFloat(trade.price),
                                 size: parseFloat(trade.size),
@@ -185,7 +203,7 @@ export function useDydxData(
 
                         // Candles updates
                         if (channel === 'v4_candles' && contents) {
-                            const { ticker, resolution: res, startedAt, open, high, low, close, baseTokenVolume } = contents;
+                            const { ticker, startedAt, open, high, low, close, baseTokenVolume } = contents;
                             
                             const newCandle: CandleData = {
                                 timestamp: new Date(startedAt).getTime(),
