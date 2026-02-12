@@ -67,7 +67,7 @@ function initChart() {
                     showRule: 'none',
                     showType: 'standard',
                     text: {
-                        size: 12,
+                        size: 10,
                         family: 'Arial',
                         weight: 'normal',
                         color: isDark ? '#9CA3AF' : '#6B7280',
@@ -105,7 +105,7 @@ function initChart() {
                         },
                         text: {
                             show: true,
-                            size: 12,
+                            size: 10,
                             paddingLeft: 4,
                             paddingTop: 4,
                             paddingRight: 4,
@@ -123,7 +123,7 @@ function initChart() {
                     showRule: 'always',
                     showType: 'standard',
                     text: {
-                        size: 12,
+                        size: 10,
                         family: 'Arial',
                         weight: 'normal',
                         color: isDark ? '#9CA3AF' : '#6B7280',
@@ -141,11 +141,11 @@ function initChart() {
                 tickText: {
                     show: true,
                     color: isDark ? '#9CA3AF' : '#6B7280',
-                    size: 12,
+                    size: 10,
                     family: 'Arial',
                     weight: 'normal',
-                    marginStart: 4,
-                    marginEnd: 4,
+                    marginStart: 3,
+                    marginEnd: 3,
                 },
                 tickLine: {
                     show: true,
@@ -169,11 +169,11 @@ function initChart() {
                 tickText: {
                     show: true,
                     color: isDark ? '#9CA3AF' : '#6B7280',
-                    size: 12,
+                    size: 10,
                     family: 'Arial',
                     weight: 'normal',
-                    marginStart: 4,
-                    marginEnd: 4,
+                    marginStart: 3,
+                    marginEnd: 3,
                 },
                 tickLine: {
                     show: true,
@@ -196,7 +196,7 @@ function initChart() {
                     text: {
                         show: true,
                         color: '#FFFFFF',
-                        size: 12,
+                        size: 10,
                         family: 'Arial',
                         weight: 'normal',
                         paddingLeft: 4,
@@ -221,7 +221,7 @@ function initChart() {
                     text: {
                         show: true,
                         color: '#FFFFFF',
-                        size: 12,
+                        size: 10,
                         family: 'Arial',
                         weight: 'normal',
                         paddingLeft: 4,

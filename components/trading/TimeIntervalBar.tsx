@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
     },
     intervalText: {
         color: '#6B7280',
-        fontSize: 13,
+        fontSize: 12,
         fontWeight: '600',
     },
     intervalTextActive: {

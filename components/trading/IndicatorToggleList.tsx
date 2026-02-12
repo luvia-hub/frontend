@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
     },
     pillText: {
         color: '#6B7280',
-        fontSize: 12,
+        fontSize: 11,
         fontWeight: '600',
     },
     pillTextActive: {

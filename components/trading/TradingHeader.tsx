@@ -59,7 +59,7 @@ const styles = StyleSheet.create({
     },
     pairText: {
         color: '#FFFFFF',
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: '700',
     },
     perpBadge: {
@@ -80,11 +80,11 @@ const styles = StyleSheet.create({
     },
     coinName: {
         color: '#9CA3AF',
-        fontSize: 13,
+        fontSize: 11,
     },
     priceChange: {
         color: '#22C55E',
-        fontSize: 13,
+        fontSize: 11,
         fontWeight: '600',
     },
     moreButton: {

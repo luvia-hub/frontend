@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
         paddingVertical: 6,
     },
     tradePrice: {
-        fontSize: 13,
+        fontSize: 12,
         fontWeight: '700',
     },
     tradeBuy: {
@@ -71,12 +71,12 @@ const styles = StyleSheet.create({
     },
     tradeSize: {
         color: '#9CA3AF',
-        fontSize: 12,
+        fontSize: 11,
         fontWeight: '500',
     },
     tradeTime: {
         color: '#6B7280',
-        fontSize: 11,
+        fontSize: 10,
         fontWeight: '500',
     },
     emptyState: {
@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
     },
     emptyStateText: {
         color: '#6B7280',
-        fontSize: 13,
+        fontSize: 12,
         fontWeight: '500',
     },
 });

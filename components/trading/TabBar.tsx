@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
     },
     tabButtonText: {
         color: '#6B7280',
-        fontSize: 14,
+        fontSize: 13,
         fontWeight: '600',
     },
     tabButtonTextActive: {

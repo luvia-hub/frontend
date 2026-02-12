@@ -31,20 +31,22 @@ export function useHyperliquidData(
         setRecentTrades([]);
         setOrderBook(null);
 
+        // Interval duration in milliseconds for candle merge threshold
+        const intervalMs: Record<string, number> = {
+            '1m': 60_000,
+            '5m': 5 * 60_000,
+            '15m': 15 * 60_000,
+            '1h': 60 * 60_000,
+            '4h': 4 * 60 * 60_000,
+            '1D': 24 * 60 * 60_000,
+        };
+        const candleDurationMs = intervalMs[timeInterval] ?? 15 * 60_000;
+
         // Fetch historical candle data via HTTP
         const fetchCandleHistory = async () => {
             try {
                 const endTime = Date.now();
-                const intervalMs: Record<string, number> = {
-                    '1m': 60_000,
-                    '5m': 5 * 60_000,
-                    '15m': 15 * 60_000,
-                    '1h': 60 * 60_000,
-                    '4h': 4 * 60 * 60_000,
-                    '1D': 24 * 60 * 60_000,
-                };
-                const candleMs = intervalMs[timeInterval] ?? 15 * 60_000;
-                const startTime = endTime - candleMs * 500; // fetch ~500 candles
+                const startTime = endTime - candleDurationMs * 500; // fetch ~500 candles
 
                 const response = await fetch(REST_API_URL, {
                     method: 'POST',
@@ -167,7 +169,7 @@ export function useHyperliquidData(
 
                         setChartData((prev) => {
                             const lastCandle = prev[prev.length - 1];
-                            if (lastCandle && Math.abs(lastCandle.timestamp - newCandle.timestamp) < 60000) {
+                            if (lastCandle && Math.abs(lastCandle.timestamp - newCandle.timestamp) < candleDurationMs) {
                                 const updated = [...prev];
                                 updated[updated.length - 1] = newCandle;
                                 return updated;

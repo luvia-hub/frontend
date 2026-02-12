@@ -34,7 +34,7 @@ const styles = StyleSheet.create({
     },
     connectionBannerText: {
         color: '#9CA3AF',
-        fontSize: 12,
+        fontSize: 11,
         fontWeight: '600',
         textAlign: 'center',
     },
