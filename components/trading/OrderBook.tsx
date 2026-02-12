@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
     },
     orderBookHeaderText: {
         color: '#6B7280',
-        fontSize: 11,
+        fontSize: 10,
         fontWeight: '600',
         flex: 1,
         textAlign: 'center',
@@ -150,20 +150,20 @@ const styles = StyleSheet.create({
     },
     orderSize: {
         color: '#9CA3AF',
-        fontSize: 12,
+        fontSize: 11,
         fontWeight: '500',
         zIndex: 1,
     },
     orderPriceBuy: {
         color: '#22C55E',
-        fontSize: 13,
+        fontSize: 12,
         fontWeight: '600',
         fontFamily: 'Courier',
         zIndex: 1,
     },
     orderPriceSell: {
         color: '#EF4444',
-        fontSize: 13,
+        fontSize: 12,
         fontWeight: '600',
         fontFamily: 'Courier',
         zIndex: 1,
@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
     },
     emptyStateText: {
         color: '#6B7280',
-        fontSize: 13,
+        fontSize: 12,
         fontWeight: '500',
     },
 });

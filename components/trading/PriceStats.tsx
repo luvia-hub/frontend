@@ -43,13 +43,13 @@ const styles = StyleSheet.create({
     },
     statLabel: {
         color: '#6B7280',
-        fontSize: 11,
+        fontSize: 10,
         fontWeight: '600',
         marginBottom: 4,
     },
     statValue: {
         color: '#FFFFFF',
-        fontSize: 16,
+        fontSize: 14,
         fontWeight: '700',
     },
 });
