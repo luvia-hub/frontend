@@ -12,6 +12,7 @@ import {
   useDydxData,
   useGmxData,
   useLighterData,
+  useAsterData,
 } from './trading';
 import type { TabType, TimeInterval, IndicatorType } from './trading';
 import type { ExchangeType } from './trading';
@@ -125,6 +126,9 @@ export default function TradingInterface({ selectedMarket, onOpenTradingForm }: 
   // Live data from Lighter
   const lighterData = useLighterData(selectedPair, timeInterval);
 
+  // Live data from Aster
+  const asterData = useAsterData(selectedPair, timeInterval);
+
   // Default empty data for unsupported exchanges
   const emptyExchangeData = {
     connectionState: 'loading' as const,
@@ -145,6 +149,8 @@ export default function TradingInterface({ selectedMarket, onOpenTradingForm }: 
         return gmxData;
       case 'lighter':
         return lighterData;
+      case 'aster':
+        return asterData;
       default:
         return emptyExchangeData;
     }
@@ -176,7 +182,8 @@ export default function TradingInterface({ selectedMarket, onOpenTradingForm }: 
   const isDydx = activeExchange === 'dydx';
   const isGmx = activeExchange === 'gmx';
   const isLighter = activeExchange === 'lighter';
-  const isConnectedExchange = isHyperliquid || isDydx || isGmx || isLighter;
+  const isAster = activeExchange === 'aster';
+  const isConnectedExchange = isHyperliquid || isDydx || isGmx || isLighter || isAster;
   const activeExchangeLabel = useMemo(() => EXCHANGE_LABELS[activeExchange], [activeExchange]);
   const activeContentTabLabel = useMemo(() => CONTENT_TAB_LABELS[activeTab], [activeTab]);
 
