@@ -9,6 +9,8 @@ import {
   mapIntervalToAsterInterval,
 } from '../../services/aster';
 
+const POLLING_INTERVAL_MS = 5000;
+
 export interface AsterData {
   connectionState: ConnectionState;
   connectionError: string | null;
@@ -189,7 +191,7 @@ export function useAsterData(
       } finally {
         isPolling = false;
       }
-    }, 5000);
+    }, POLLING_INTERVAL_MS);
 
     return () => {
       isMounted = false;
