@@ -10,6 +10,7 @@ import {
   RecentTrades,
   useHyperliquidData,
   useDydxData,
+  useGmxData,
 } from './trading';
 import type { TabType, TimeInterval, IndicatorType } from './trading';
 import type { ExchangeType } from './trading';
@@ -112,6 +113,9 @@ export default function TradingInterface({ selectedMarket, onOpenTradingForm }: 
   
   // Live data from dYdX
   const dydxData = useDydxData(selectedPair, timeInterval);
+  
+  // Live data from GMX
+  const gmxData = useGmxData(selectedPair, timeInterval);
 
   // Default empty data for unsupported exchanges
   const emptyExchangeData = {
@@ -130,6 +134,7 @@ export default function TradingInterface({ selectedMarket, onOpenTradingForm }: 
       case 'dydx':
         return dydxData;
       case 'gmx':
+        return gmxData;
       default:
         return emptyExchangeData;
     }
@@ -159,7 +164,8 @@ export default function TradingInterface({ selectedMarket, onOpenTradingForm }: 
 
   const isHyperliquid = activeExchange === 'hyperliquid';
   const isDydx = activeExchange === 'dydx';
-  const isConnectedExchange = isHyperliquid || isDydx;
+  const isGmx = activeExchange === 'gmx';
+  const isConnectedExchange = isHyperliquid || isDydx || isGmx;
   const activeExchangeLabel = useMemo(() => EXCHANGE_LABELS[activeExchange], [activeExchange]);
   const activeContentTabLabel = useMemo(() => CONTENT_TAB_LABELS[activeTab], [activeTab]);
 
