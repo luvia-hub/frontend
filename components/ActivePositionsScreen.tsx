@@ -185,12 +185,13 @@ interface ActivePositionsScreenProps {
 }
 
 export default function ActivePositionsScreen({ onBack }: ActivePositionsScreenProps) {
-  const [selectedFilter, setSelectedFilter] = useState<'all' | 'hyperliquid' | 'dydx'>('all');
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'hyperliquid' | 'dydx' | 'aster'>('all');
 
   const filteredPositions = MOCK_POSITIONS.filter(position => {
     if (selectedFilter === 'all') return true;
     if (selectedFilter === 'hyperliquid') return position.exchange === 'Hyperliquid';
     if (selectedFilter === 'dydx') return position.exchange === 'dYdX';
+    if (selectedFilter === 'aster') return position.exchange === 'Aster';
     return true;
   });
 
@@ -264,6 +265,12 @@ export default function ActivePositionsScreen({ onBack }: ActivePositionsScreenP
             icon="◆"
             isActive={selectedFilter === 'dydx'}
             onPress={() => setSelectedFilter('dydx')}
+          />
+          <FilterChip
+            label="Aster"
+            icon="★"
+            isActive={selectedFilter === 'aster'}
+            onPress={() => setSelectedFilter('aster')}
           />
         </View>
 

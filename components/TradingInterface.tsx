@@ -37,6 +37,7 @@ const EXCHANGE_LABELS: Record<ExchangeType, string> = {
   dydx: 'dYdX',
   gmx: 'GMX',
   lighter: 'Lighter',
+  aster: 'Aster',
 };
 
 const EXCHANGE_TABS: { key: ExchangeType; label: string }[] = [
@@ -44,6 +45,7 @@ const EXCHANGE_TABS: { key: ExchangeType; label: string }[] = [
   { key: 'dydx', label: EXCHANGE_LABELS.dydx },
   { key: 'gmx', label: EXCHANGE_LABELS.gmx },
   { key: 'lighter', label: EXCHANGE_LABELS.lighter },
+  { key: 'aster', label: EXCHANGE_LABELS.aster },
 ];
 
 interface TradingInterfaceProps {
