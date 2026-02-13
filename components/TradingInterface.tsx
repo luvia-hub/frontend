@@ -9,6 +9,7 @@ import {
   OrderBook,
   RecentTrades,
   useHyperliquidData,
+  useDydxData,
 } from './trading';
 import type { TabType, TimeInterval, IndicatorType } from './trading';
 import type { ExchangeType } from './trading';
@@ -107,8 +108,34 @@ export default function TradingInterface({ selectedMarket, onOpenTradingForm }: 
   const pairLabel = `${selectedPair}/USD`;
 
   // Live data from Hyperliquid
-  const { connectionState, connectionError, orderBook, recentTrades, chartData } =
-    useHyperliquidData(selectedPair, timeInterval);
+  const hyperliquidData = useHyperliquidData(selectedPair, timeInterval);
+  
+  // Live data from dYdX
+  const dydxData = useDydxData(selectedPair, timeInterval);
+
+  // Default empty data for unsupported exchanges
+  const emptyExchangeData = {
+    connectionState: 'loading' as const,
+    connectionError: null,
+    orderBook: null,
+    recentTrades: [],
+    chartData: [],
+  };
+
+  // Select data based on active exchange
+  const getExchangeData = () => {
+    switch (activeExchange) {
+      case 'hyperliquid':
+        return hyperliquidData;
+      case 'dydx':
+        return dydxData;
+      case 'gmx':
+      default:
+        return emptyExchangeData;
+    }
+  };
+
+  const { connectionState, connectionError, orderBook, recentTrades, chartData } = getExchangeData();
 
   // Derived values
   const baseMarkPrice = 64230.5;
@@ -131,6 +158,8 @@ export default function TradingInterface({ selectedMarket, onOpenTradingForm }: 
   );
 
   const isHyperliquid = activeExchange === 'hyperliquid';
+  const isDydx = activeExchange === 'dydx';
+  const isConnectedExchange = isHyperliquid || isDydx;
   const activeExchangeLabel = useMemo(() => EXCHANGE_LABELS[activeExchange], [activeExchange]);
   const activeContentTabLabel = useMemo(() => CONTENT_TAB_LABELS[activeTab], [activeTab]);
 
@@ -166,7 +195,7 @@ export default function TradingInterface({ selectedMarket, onOpenTradingForm }: 
 
         <TradingHeader pairLabel={pairLabel} priceChange={priceChange} />
 
-        {isHyperliquid ? (
+        {isConnectedExchange ? (
           <PriceStats
             markPrice={markPrice}
             indexPrice={indexPrice}
@@ -180,7 +209,7 @@ export default function TradingInterface({ selectedMarket, onOpenTradingForm }: 
           </View>
         )}
 
-        {isHyperliquid ? (
+        {isConnectedExchange ? (
           <ConnectionBanner
             connectionState={connectionState}
             connectionError={connectionError}
@@ -195,7 +224,7 @@ export default function TradingInterface({ selectedMarket, onOpenTradingForm }: 
 
         {/* Chart Panel */}
         <View style={[styles.panel, styles.chartPanel]}>
-          {isHyperliquid ? (
+          {isConnectedExchange ? (
             <TimeIntervalBar
               timeInterval={timeInterval}
               onTimeIntervalChange={handleTimeIntervalChange}
@@ -220,7 +249,7 @@ export default function TradingInterface({ selectedMarket, onOpenTradingForm }: 
             onTabChange={handleTabChange}
           />
 
-          {isHyperliquid ? (
+          {isConnectedExchange ? (
             <>
               {activeTab === 'orderBook' && (
                 <OrderBook
