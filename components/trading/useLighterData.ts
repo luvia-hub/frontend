@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import type { CandleData, ConnectionState, OrderBookState, TimeInterval, Trade, OrderBookLevel } from './types';
 import { MAX_TRADES } from './types';
 import {
-  LIGHTER_WEBSOCKET_URL,
   fetchLighterCandles,
   fetchLighterOrderBook,
   fetchLighterTrades,
@@ -47,6 +46,7 @@ export function useLighterData(
   useEffect(() => {
     let isMounted = true;
     let pollingInterval: NodeJS.Timeout | null = null;
+    let isPolling = false;
 
     setConnectionState('loading');
     setConnectionError(null);
@@ -138,7 +138,9 @@ export function useLighterData(
 
     // Set up polling for updates (every 5 seconds)
     pollingInterval = setInterval(async () => {
-      if (!isMounted) return;
+      if (!isMounted || isPolling) return;
+      
+      isPolling = true;
       
       try {
         // Poll for new candles
@@ -217,6 +219,8 @@ export function useLighterData(
       } catch (error) {
         console.warn('Failed to poll Lighter data:', error);
         // Don't set error state on polling failures, keep existing data
+      } finally {
+        isPolling = false;
       }
     }, 5000); // Poll every 5 seconds
 

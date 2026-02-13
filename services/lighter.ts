@@ -163,7 +163,9 @@ export async function fetchLighterCandles(
 
 /**
  * Get market ID from ticker symbol (e.g., "BTC" -> market_id)
- * This is a simplified mapping - in production, you'd fetch from the markets list
+ * TODO: Fetch market IDs dynamically from fetchLighterMarkets() API
+ * to avoid potential mismatches if Lighter's market IDs change.
+ * This is a simplified mapping for initial integration.
  */
 export function getMarketIdFromTicker(ticker: string): number {
   // Common market IDs - these would typically come from the markets API
