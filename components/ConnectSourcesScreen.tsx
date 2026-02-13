@@ -151,6 +151,17 @@ export default function ConnectSourcesScreen({ onClose }: ConnectSourcesScreenPr
             description="Spot and perpetuals"
             onPress={() => handleSourcePress('gmx')}
           />
+
+          <SourceItem
+            icon={
+              <View style={styles.lighterIconContainer}>
+                <Text style={styles.lighterIconText}>L</Text>
+              </View>
+            }
+            name="Lighter"
+            description="High-performance orderbook DEX"
+            onPress={() => handleSourcePress('lighter')}
+          />
         </View>
 
         {/* Wallets Section */}
@@ -337,6 +348,19 @@ const styles = StyleSheet.create({
   gmxIconText: {
     color: '#FFFFFF',
     fontSize: 14,
+    fontWeight: '700',
+  },
+  lighterIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#7C3AED',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lighterIconText: {
+    color: '#FFFFFF',
+    fontSize: 20,
     fontWeight: '700',
   },
   manualImportButton: {

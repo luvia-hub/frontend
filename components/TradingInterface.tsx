@@ -11,6 +11,7 @@ import {
   useHyperliquidData,
   useDydxData,
   useGmxData,
+  useLighterData,
 } from './trading';
 import type { TabType, TimeInterval, IndicatorType } from './trading';
 import type { ExchangeType } from './trading';
@@ -35,12 +36,14 @@ const EXCHANGE_LABELS: Record<ExchangeType, string> = {
   hyperliquid: 'Hyperliquid',
   dydx: 'dYdX',
   gmx: 'GMX',
+  lighter: 'Lighter',
 };
 
 const EXCHANGE_TABS: { key: ExchangeType; label: string }[] = [
   { key: 'hyperliquid', label: EXCHANGE_LABELS.hyperliquid },
   { key: 'dydx', label: EXCHANGE_LABELS.dydx },
   { key: 'gmx', label: EXCHANGE_LABELS.gmx },
+  { key: 'lighter', label: EXCHANGE_LABELS.lighter },
 ];
 
 interface TradingInterfaceProps {
@@ -116,6 +119,9 @@ export default function TradingInterface({ selectedMarket, onOpenTradingForm }: 
   
   // Live data from GMX
   const gmxData = useGmxData(selectedPair, timeInterval);
+  
+  // Live data from Lighter
+  const lighterData = useLighterData(selectedPair, timeInterval);
 
   // Default empty data for unsupported exchanges
   const emptyExchangeData = {
@@ -135,6 +141,8 @@ export default function TradingInterface({ selectedMarket, onOpenTradingForm }: 
         return dydxData;
       case 'gmx':
         return gmxData;
+      case 'lighter':
+        return lighterData;
       default:
         return emptyExchangeData;
     }
@@ -165,7 +173,8 @@ export default function TradingInterface({ selectedMarket, onOpenTradingForm }: 
   const isHyperliquid = activeExchange === 'hyperliquid';
   const isDydx = activeExchange === 'dydx';
   const isGmx = activeExchange === 'gmx';
-  const isConnectedExchange = isHyperliquid || isDydx || isGmx;
+  const isLighter = activeExchange === 'lighter';
+  const isConnectedExchange = isHyperliquid || isDydx || isGmx || isLighter;
   const activeExchangeLabel = useMemo(() => EXCHANGE_LABELS[activeExchange], [activeExchange]);
   const activeContentTabLabel = useMemo(() => CONTENT_TAB_LABELS[activeTab], [activeTab]);
 

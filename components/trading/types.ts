@@ -3,7 +3,7 @@ export type OrderType = 'market' | 'limit' | 'stop';
 export type TimeInterval = '1m' | '5m' | '15m' | '1h' | '4h' | '1D';
 export type ConnectionState = 'loading' | 'open' | 'error';
 export type TradeSide = 'buy' | 'sell';
-export type ExchangeType = 'hyperliquid' | 'dydx' | 'gmx';
+export type ExchangeType = 'hyperliquid' | 'dydx' | 'gmx' | 'lighter';
 
 export type OrderBookLevel = {
     price: number;

@@ -13,4 +13,5 @@ export { default as ActionButtons } from './ActionButtons';
 export { useHyperliquidData } from './useHyperliquidData';
 export { useDydxData } from './useDydxData';
 export { useGmxData } from './useGmxData';
+export { useLighterData } from './useLighterData';
 export * from './types';
