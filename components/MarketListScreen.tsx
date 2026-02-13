@@ -13,6 +13,7 @@ import { PublicClient, HttpTransport } from '@far1s/hyperliquid';
 import { useQuery } from '@tanstack/react-query';
 import { fetchDydxMarkets } from '../services/dydx';
 import { fetchGmxMarkets } from '../services/gmx';
+import { fetchAsterMarkets } from '../services/aster';
 
 interface Market {
   id: string;
@@ -44,6 +45,7 @@ interface GroupedMarket {
 const HYPERLIQUID_EXCHANGE = 'Hyperliquid';
 const DYDX_EXCHANGE = 'dYdX';
 const GMX_EXCHANGE = 'GMX';
+const ASTER_EXCHANGE = 'Aster';
 const VOLATILITY_THRESHOLD = 5;
 const PRICE_REFRESH_MS = 10000;
 
@@ -85,6 +87,8 @@ function getExchangeColor(exchange: string): string {
       return '#EC4899';
     case HYPERLIQUID_EXCHANGE:
       return '#0EA5E9';
+    case ASTER_EXCHANGE:
+      return '#F59E0B';
     default:
       return '#9CA3AF';
   }
@@ -220,11 +224,12 @@ export default function MarketListScreen({ onMarketPress }: MarketListScreenProp
   }, []);
 
   const fetchGroupedMarkets = useCallback(async (): Promise<GroupedMarket[]> => {
-    // Fetch from all three exchanges in parallel
-    const [hyperliquidData, dydxMarkets, gmxMarkets] = await Promise.all([
+    // Fetch from all exchanges in parallel
+    const [hyperliquidData, dydxMarkets, gmxMarkets, asterMarkets] = await Promise.all([
       client.metaAndAssetCtxs().catch(() => [{ universe: [] }, []]),
       fetchDydxMarkets(),
       fetchGmxMarkets(),
+      fetchAsterMarkets(),
     ]);
 
     const allMarkets: Market[] = [];
@@ -291,6 +296,24 @@ export default function MarketListScreen({ onMarketPress }: MarketListScreenProp
     // TODO: Integrate GMX price data from additional endpoint or subgraph
     // gmxMarkets are fetched but not processed until we have price data
     void gmxMarkets;
+
+    // Process Aster markets
+    asterMarkets.forEach((market) => {
+      const price = safeFloat(market.lastPrice) || 0;
+      const priceChange = safeFloat(market.priceChangePercent) || 0;
+      const fundingRate = safeFloat(market.fundingRate) || 0;
+
+      allMarkets.push({
+        id: `${ASTER_EXCHANGE}-${market.symbol}`,
+        symbol: market.symbol,
+        name: market.baseAsset || extractTokenPair(market.symbol),
+        price,
+        priceChange,
+        exchange: ASTER_EXCHANGE,
+        fundingRate: fundingRate * 100,
+        volatile: Math.abs(priceChange) >= VOLATILITY_THRESHOLD,
+      });
+    });
 
     // Group markets by token pair
     const marketsByPair = new Map<string, Market[]>();

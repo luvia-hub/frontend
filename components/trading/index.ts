@@ -14,4 +14,5 @@ export { useHyperliquidData } from './useHyperliquidData';
 export { useDydxData } from './useDydxData';
 export { useGmxData } from './useGmxData';
 export { useLighterData } from './useLighterData';
+export { useAsterData } from './useAsterData';
 export * from './types';
