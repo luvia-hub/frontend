@@ -3,6 +3,7 @@ import { StyleSheet, View, TouchableOpacity, Text, Modal } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { Home, BarChart3, ArrowRightLeft, TrendingUp, Wallet } from 'lucide-react-native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import DashboardScreen from './components/DashboardScreen';
 import CryptoPortfolioDashboard from './components/CryptoPortfolioDashboard';
 import TradingInterface from './components/TradingInterface';
@@ -12,15 +13,19 @@ import MarketListScreen from './components/MarketListScreen';
 import ActivePositionsScreen from './components/ActivePositionsScreen';
 import WalletConnectScreen from './components/WalletConnectScreen';
 import { WalletProvider } from './contexts/WalletContext';
-
-type Tab = 'home' | 'markets' | 'trade' | 'earn' | 'wallet';
+import { useAppNavigationStore } from './stores/useAppNavigationStore';
 
 function AppContent() {
-  const [activeTab, setActiveTab] = useState<Tab>('home');
-  const [showConnectSources, setShowConnectSources] = useState(false);
-  const [showActivePositions, setShowActivePositions] = useState(false);
-  const [showTradingForm, setShowTradingForm] = useState(false);
-  const [selectedMarket, setSelectedMarket] = useState<string | undefined>(undefined);
+  const activeTab = useAppNavigationStore((state) => state.activeTab);
+  const showConnectSources = useAppNavigationStore((state) => state.showConnectSources);
+  const showActivePositions = useAppNavigationStore((state) => state.showActivePositions);
+  const showTradingForm = useAppNavigationStore((state) => state.showTradingForm);
+  const selectedMarket = useAppNavigationStore((state) => state.selectedMarket);
+  const setActiveTab = useAppNavigationStore((state) => state.setActiveTab);
+  const setShowConnectSources = useAppNavigationStore((state) => state.setShowConnectSources);
+  const setShowActivePositions = useAppNavigationStore((state) => state.setShowActivePositions);
+  const setShowTradingForm = useAppNavigationStore((state) => state.setShowTradingForm);
+  const setSelectedMarket = useAppNavigationStore((state) => state.setSelectedMarket);
 
   const getHeaderTitle = () => {
     switch (activeTab) {
@@ -227,12 +232,16 @@ function AppContent() {
 }
 
 export default function App() {
+  const [queryClient] = useState(() => new QueryClient());
+
   return (
-    <WalletProvider>
-      <SafeAreaProvider>
-        <AppContent />
-      </SafeAreaProvider>
-    </WalletProvider>
+    <QueryClientProvider client={queryClient}>
+      <WalletProvider>
+        <SafeAreaProvider>
+          <AppContent />
+        </SafeAreaProvider>
+      </WalletProvider>
+    </QueryClientProvider>
   );
 }
 
