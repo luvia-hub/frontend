@@ -162,6 +162,17 @@ export default function ConnectSourcesScreen({ onClose }: ConnectSourcesScreenPr
             description="High-performance orderbook DEX"
             onPress={() => handleSourcePress('lighter')}
           />
+
+          <SourceItem
+            icon={
+              <View style={styles.asterIconContainer}>
+                <Text style={styles.asterIconText}>A</Text>
+              </View>
+            }
+            name="Aster"
+            description="Advanced derivatives trading"
+            onPress={() => handleSourcePress('aster')}
+          />
         </View>
 
         {/* Wallets Section */}
@@ -359,6 +370,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   lighterIconText: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  asterIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#EC4899',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  asterIconText: {
     color: '#FFFFFF',
     fontSize: 20,
     fontWeight: '700',
