@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Search, SlidersHorizontal, Star, TrendingUp, TrendingDown, Copy } from 'lucide-react-native';
 import { PublicClient, HttpTransport } from '@far1s/hyperliquid';
+import { useQuery } from '@tanstack/react-query';
 import { fetchDydxMarkets } from '../services/dydx';
 import { fetchGmxMarkets } from '../services/gmx';
 
@@ -209,7 +210,6 @@ interface MarketListScreenProps {
 }
 
 export default function MarketListScreen({ onMarketPress }: MarketListScreenProps) {
-  const [groupedMarkets, setGroupedMarkets] = useState<GroupedMarket[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
 
@@ -219,142 +219,130 @@ export default function MarketListScreen({ onMarketPress }: MarketListScreenProp
     });
   }, []);
 
-  useEffect(() => {
-    let isMounted = true;
+  const fetchGroupedMarkets = useCallback(async (): Promise<GroupedMarket[]> => {
+    // Fetch from all three exchanges in parallel
+    const [hyperliquidData, dydxMarkets, gmxMarkets] = await Promise.all([
+      client.metaAndAssetCtxs().catch(() => [{ universe: [] }, []]),
+      fetchDydxMarkets(),
+      fetchGmxMarkets(),
+    ]);
 
-    const updateMarketData = async () => {
-      try {
-        // Fetch from all three exchanges in parallel
-        const [hyperliquidData, dydxMarkets, gmxMarkets] = await Promise.all([
-          client.metaAndAssetCtxs().catch(() => [{ universe: [] }, []]),
-          fetchDydxMarkets(),
-          fetchGmxMarkets(),
-        ]);
+    const allMarkets: Market[] = [];
 
-        if (!isMounted) return;
+    // Process Hyperliquid markets
+    const [meta, assetCtxs] = hyperliquidData;
+    const universe = (meta && 'universe' in meta) ? meta.universe : [];
+    const availableAssets = universe.filter((asset: any) => !asset.isDelisted);
 
-        const allMarkets: Market[] = [];
-
-        // Process Hyperliquid markets
-        const [meta, assetCtxs] = hyperliquidData;
-        const universe = (meta && 'universe' in meta) ? meta.universe : [];
-        const availableAssets = universe.filter((asset: any) => !asset.isDelisted);
-
-        const ctxByName = new Map();
-        const count = Math.min(universe.length, Array.isArray(assetCtxs) ? assetCtxs.length : 0);
-        for (let i = 0; i < count; i++) {
-          if (Array.isArray(assetCtxs)) {
-            ctxByName.set(universe[i].name, assetCtxs[i]);
-          }
-        }
-
-        availableAssets.forEach((asset: any) => {
-          const ctx = ctxByName.get(asset.name);
-          const markPx = ctx ? safeFloat(ctx.markPx) : undefined;
-          const prevDayPx = ctx ? safeFloat(ctx.prevDayPx) : undefined;
-          const funding = ctx ? safeFloat(ctx.funding) : undefined;
-
-          const price = markPx || 0;
-          let priceChange = 0;
-          if (prevDayPx && prevDayPx > 0 && markPx) {
-            priceChange = ((markPx - prevDayPx) / prevDayPx) * 100;
-          }
-
-          allMarkets.push({
-            id: `${HYPERLIQUID_EXCHANGE}-${asset.name}`,
-            symbol: `${asset.name}-PERP`,
-            name: asset.name,
-            price,
-            priceChange,
-            exchange: HYPERLIQUID_EXCHANGE,
-            fundingRate: funding ? funding * 100 : 0,
-            volatile: Math.abs(priceChange) >= VOLATILITY_THRESHOLD,
-          });
-        });
-
-        // Process dYdX markets
-        dydxMarkets.forEach((market) => {
-          const price = safeFloat(market.oraclePrice) || 0;
-          // dYdX API returns priceChange24H as a decimal (e.g., 0.025 for 2.5%)
-          const priceChange = safeFloat(market.priceChange24H) || 0;
-          // dYdX API returns nextFundingRate as a decimal per funding period
-          const fundingRate = safeFloat(market.nextFundingRate) || 0;
-          const tokenPair = extractTokenPair(market.ticker);
-
-          allMarkets.push({
-            id: `${DYDX_EXCHANGE}-${market.ticker}`,
-            symbol: market.ticker,
-            name: tokenPair,
-            price,
-            priceChange: priceChange * 100, // Convert to percentage
-            exchange: DYDX_EXCHANGE,
-            fundingRate: fundingRate * 100, // Convert to percentage
-            volatile: Math.abs(priceChange * 100) >= VOLATILITY_THRESHOLD,
-          });
-        });
-
-        // GMX markets - Skip for now as the API doesn't provide price data directly
-        // TODO: Integrate GMX price data from additional endpoint or subgraph
-        // gmxMarkets are fetched but not processed until we have price data
-
-        // Group markets by token pair
-        const marketsByPair = new Map<string, Market[]>();
-        allMarkets.forEach((market) => {
-          const tokenPair = extractTokenPair(market.name);
-          if (!marketsByPair.has(tokenPair)) {
-            marketsByPair.set(tokenPair, []);
-          }
-          marketsByPair.get(tokenPair)!.push(market);
-        });
-
-        // Create grouped markets
-        const grouped: GroupedMarket[] = [];
-        marketsByPair.forEach((markets, tokenPair) => {
-          // Find best price and funding rate
-          const validMarkets = markets.filter(m => m.price > 0);
-          if (validMarkets.length === 0) return; // Skip if no valid prices
-
-          const bestPriceMarket = validMarkets.reduce((best, current) =>
-            // For perpetuals, show the lowest price as it represents the best buy price
-            // Note: Traders can go both long and short, but we display the best entry price
-            current.price < best.price ? current : best
-          );
-
-          const bestRateMarket = markets.reduce((best, current) =>
-            current.fundingRate > best.fundingRate ? current : best
-          );
-
-          grouped.push({
-            id: tokenPair,
-            tokenPair,
-            markets,
-            bestPrice: bestPriceMarket.price,
-            bestPriceChange: bestPriceMarket.priceChange,
-            bestRate: {
-              exchange: bestRateMarket.exchange,
-              rate: bestRateMarket.fundingRate,
-            },
-            volatile: validMarkets.some(m => m.volatile),
-          });
-        });
-
-        // Sort by token pair name
-        grouped.sort((a, b) => a.tokenPair.localeCompare(b.tokenPair));
-
-        setGroupedMarkets(grouped);
-      } catch (error) {
-        console.warn('Failed to update market data', error);
+    const ctxByName = new Map();
+    const count = Math.min(universe.length, Array.isArray(assetCtxs) ? assetCtxs.length : 0);
+    for (let i = 0; i < count; i++) {
+      if (Array.isArray(assetCtxs)) {
+        ctxByName.set(universe[i].name, assetCtxs[i]);
       }
-    };
+    }
 
-    updateMarketData();
-    const interval = setInterval(updateMarketData, PRICE_REFRESH_MS);
+    availableAssets.forEach((asset: any) => {
+      const ctx = ctxByName.get(asset.name);
+      const markPx = ctx ? safeFloat(ctx.markPx) : undefined;
+      const prevDayPx = ctx ? safeFloat(ctx.prevDayPx) : undefined;
+      const funding = ctx ? safeFloat(ctx.funding) : undefined;
 
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
+      const price = markPx || 0;
+      let priceChange = 0;
+      if (prevDayPx && prevDayPx > 0 && markPx) {
+        priceChange = ((markPx - prevDayPx) / prevDayPx) * 100;
+      }
+
+      allMarkets.push({
+        id: `${HYPERLIQUID_EXCHANGE}-${asset.name}`,
+        symbol: `${asset.name}-PERP`,
+        name: asset.name,
+        price,
+        priceChange,
+        exchange: HYPERLIQUID_EXCHANGE,
+        fundingRate: funding ? funding * 100 : 0,
+        volatile: Math.abs(priceChange) >= VOLATILITY_THRESHOLD,
+      });
+    });
+
+    // Process dYdX markets
+    dydxMarkets.forEach((market) => {
+      const price = safeFloat(market.oraclePrice) || 0;
+      // dYdX API returns priceChange24H as a decimal (e.g., 0.025 for 2.5%)
+      const priceChange = safeFloat(market.priceChange24H) || 0;
+      // dYdX API returns nextFundingRate as a decimal per funding period
+      const fundingRate = safeFloat(market.nextFundingRate) || 0;
+      const tokenPair = extractTokenPair(market.ticker);
+
+      allMarkets.push({
+        id: `${DYDX_EXCHANGE}-${market.ticker}`,
+        symbol: market.ticker,
+        name: tokenPair,
+        price,
+        priceChange: priceChange * 100, // Convert to percentage
+        exchange: DYDX_EXCHANGE,
+        fundingRate: fundingRate * 100, // Convert to percentage
+        volatile: Math.abs(priceChange * 100) >= VOLATILITY_THRESHOLD,
+      });
+    });
+
+    // GMX markets - Skip for now as the API doesn't provide price data directly
+    // TODO: Integrate GMX price data from additional endpoint or subgraph
+    // gmxMarkets are fetched but not processed until we have price data
+    void gmxMarkets;
+
+    // Group markets by token pair
+    const marketsByPair = new Map<string, Market[]>();
+    allMarkets.forEach((market) => {
+      const tokenPair = extractTokenPair(market.name);
+      if (!marketsByPair.has(tokenPair)) {
+        marketsByPair.set(tokenPair, []);
+      }
+      marketsByPair.get(tokenPair)!.push(market);
+    });
+
+    // Create grouped markets
+    const grouped: GroupedMarket[] = [];
+    marketsByPair.forEach((markets, tokenPair) => {
+      // Find best price and funding rate
+      const validMarkets = markets.filter(m => m.price > 0);
+      if (validMarkets.length === 0) return; // Skip if no valid prices
+
+      const bestPriceMarket = validMarkets.reduce((best, current) =>
+        // For perpetuals, show the lowest price as it represents the best buy price
+        // Note: Traders can go both long and short, but we display the best entry price
+        current.price < best.price ? current : best
+      );
+
+      const bestRateMarket = markets.reduce((best, current) =>
+        current.fundingRate > best.fundingRate ? current : best
+      );
+
+      grouped.push({
+        id: tokenPair,
+        tokenPair,
+        markets,
+        bestPrice: bestPriceMarket.price,
+        bestPriceChange: bestPriceMarket.priceChange,
+        bestRate: {
+          exchange: bestRateMarket.exchange,
+          rate: bestRateMarket.fundingRate,
+        },
+        volatile: validMarkets.some(m => m.volatile),
+      });
+    });
+
+    // Sort by token pair name
+    grouped.sort((a, b) => a.tokenPair.localeCompare(b.tokenPair));
+    return grouped;
   }, [client]);
+
+  const { data: groupedMarkets = [] } = useQuery({
+    queryKey: ['grouped-markets'],
+    queryFn: fetchGroupedMarkets,
+    refetchInterval: PRICE_REFRESH_MS,
+  });
 
   const filteredMarkets = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
