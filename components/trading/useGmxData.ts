@@ -11,23 +11,33 @@ export interface GmxData {
     chartData: CandleData[];
 }
 
+// Simulation constants for orderbook and trades
+const ORDERBOOK_SPREAD = 0.0005; // 0.05% spread between bid and ask
+const ORDERBOOK_LEVELS = 6; // Number of price levels to display
+const MIN_ORDER_SIZE = 1; // Minimum order size
+const MAX_ORDER_SIZE = 6; // Maximum order size (range: 1-6)
+const MIN_TRADES_PER_CANDLE = 2; // Minimum trades to generate per candle
+const TRADE_RANGE = 2; // Range for number of trades (2-3 trades per candle)
+const MIN_TRADE_SIZE = 0.1; // Minimum trade size
+const MAX_TRADE_SIZE = 2.1; // Maximum trade size (range: 0.1-2.1)
+const POLLING_INTERVAL_MS = 10000; // Poll every 10 seconds
+const MAX_CANDLES_TO_KEEP = 100; // Keep last 100 candles in state
+
 /**
  * GMX uses a pool-based AMM model without a traditional orderbook.
  * This function generates simulated orderbook levels based on current price
  * to provide a familiar UI experience.
  */
 function generateSimulatedOrderBook(currentPrice: number): OrderBookState {
-    const spread = 0.0005; // 0.05% spread
-    const levels = 6;
     const bids: OrderBookLevel[] = [];
     const asks: OrderBookLevel[] = [];
     
     // Generate bid levels (buy orders below market price)
     let bidTotal = 0;
-    for (let i = 0; i < levels; i++) {
-        const priceOffset = spread * (i + 1);
+    for (let i = 0; i < ORDERBOOK_LEVELS; i++) {
+        const priceOffset = ORDERBOOK_SPREAD * (i + 1);
         const price = currentPrice * (1 - priceOffset);
-        const size = Math.random() * 5 + 1; // Random size between 1-6
+        const size = Math.random() * (MAX_ORDER_SIZE - MIN_ORDER_SIZE) + MIN_ORDER_SIZE;
         bidTotal += size;
         bids.push({
             price,
@@ -38,10 +48,10 @@ function generateSimulatedOrderBook(currentPrice: number): OrderBookState {
     
     // Generate ask levels (sell orders above market price)
     let askTotal = 0;
-    for (let i = 0; i < levels; i++) {
-        const priceOffset = spread * (i + 1);
+    for (let i = 0; i < ORDERBOOK_LEVELS; i++) {
+        const priceOffset = ORDERBOOK_SPREAD * (i + 1);
         const price = currentPrice * (1 + priceOffset);
-        const size = Math.random() * 5 + 1; // Random size between 1-6
+        const size = Math.random() * (MAX_ORDER_SIZE - MIN_ORDER_SIZE) + MIN_ORDER_SIZE;
         askTotal += size;
         asks.push({
             price,
@@ -64,10 +74,10 @@ function generateSimulatedTrades(candles: CandleData[]): Trade[] {
     
     recentCandles.forEach((candle, idx) => {
         // Generate 2-3 trades per candle
-        const numTrades = Math.floor(Math.random() * 2) + 2;
+        const numTrades = Math.floor(Math.random() * TRADE_RANGE) + MIN_TRADES_PER_CANDLE;
         for (let i = 0; i < numTrades; i++) {
             const price = candle.low + Math.random() * (candle.high - candle.low);
-            const size = Math.random() * 2 + 0.1;
+            const size = Math.random() * (MAX_TRADE_SIZE - MIN_TRADE_SIZE) + MIN_TRADE_SIZE;
             const side = Math.random() > 0.5 ? 'buy' : 'sell';
             
             trades.push({
@@ -193,7 +203,7 @@ export function useGmxData(
                     }
                     
                     const merged = [...prev, ...uniqueNewCandles].sort((a, b) => a.timestamp - b.timestamp);
-                    return merged.slice(-100); // Keep last 100 candles
+                    return merged.slice(-MAX_CANDLES_TO_KEEP);
                 });
 
                 // Update orderbook and trades based on latest price
@@ -205,7 +215,7 @@ export function useGmxData(
                 console.warn('Failed to poll GMX data:', error);
                 // Don't set error state on polling failures, keep existing data
             }
-        }, 10000); // Poll every 10 seconds
+        }, POLLING_INTERVAL_MS);
 
         return () => {
             isMountedRef.current = false;

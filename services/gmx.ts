@@ -108,13 +108,16 @@ export async function fetchGmxCandles(
     
     // Convert API response to our candle format
     // Note: GMX returns candles in descending order (newest first)
-    const candles: GmxCandle[] = (data.candles ?? []).map((c) => ({
-      timestamp: c[0] * 1000, // Convert to milliseconds
-      open: c[1],
-      high: c[2],
-      low: c[3],
-      close: c[4],
-    })).reverse(); // Reverse to get oldest first
+    const candles: GmxCandle[] = (data.candles ?? []).map((candle) => {
+      const [timestamp, open, high, low, close] = candle;
+      return {
+        timestamp: timestamp * 1000, // Convert to milliseconds
+        open,
+        high,
+        low,
+        close,
+      };
+    }).reverse(); // Reverse to get oldest first
 
     return candles;
   } catch (error) {
