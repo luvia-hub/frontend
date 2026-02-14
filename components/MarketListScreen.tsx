@@ -14,6 +14,7 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchDydxMarkets } from '../services/dydx';
 import { fetchGmxMarkets } from '../services/gmx';
 import { fetchAsterMarkets } from '../services/aster';
+import { fetchLighterMarkets } from '../services/lighter';
 
 interface Market {
   id: string;
@@ -46,6 +47,7 @@ const HYPERLIQUID_EXCHANGE = 'Hyperliquid';
 const DYDX_EXCHANGE = 'dYdX';
 const GMX_EXCHANGE = 'GMX';
 const ASTER_EXCHANGE = 'Aster';
+const LIGHTER_EXCHANGE = 'Lighter';
 const VOLATILITY_THRESHOLD = 5;
 const PRICE_REFRESH_MS = 10000;
 
@@ -89,6 +91,8 @@ function getExchangeColor(exchange: string): string {
       return '#0EA5E9';
     case ASTER_EXCHANGE:
       return '#F59E0B';
+    case LIGHTER_EXCHANGE:
+      return '#8B5CF6';
     default:
       return '#9CA3AF';
   }
@@ -225,11 +229,12 @@ export default function MarketListScreen({ onMarketPress }: MarketListScreenProp
 
   const fetchGroupedMarkets = useCallback(async (): Promise<GroupedMarket[]> => {
     // Fetch from all exchanges in parallel
-    const [hyperliquidData, dydxMarkets, gmxMarkets, asterMarkets] = await Promise.all([
+    const [hyperliquidData, dydxMarkets, gmxMarkets, asterMarkets, lighterMarkets] = await Promise.all([
       client.metaAndAssetCtxs().catch(() => [{ universe: [] }, []]),
       fetchDydxMarkets(),
       fetchGmxMarkets(),
       fetchAsterMarkets(),
+      fetchLighterMarkets(),
     ]);
 
     const allMarkets: Market[] = [];
@@ -311,6 +316,24 @@ export default function MarketListScreen({ onMarketPress }: MarketListScreenProp
         priceChange,
         exchange: ASTER_EXCHANGE,
         fundingRate: fundingRate * 100,
+        volatile: Math.abs(priceChange) >= VOLATILITY_THRESHOLD,
+      });
+    });
+
+    // Process Lighter markets
+    lighterMarkets.forEach((market) => {
+      const price = safeFloat(market.price) || 0;
+      const priceChange = safeFloat(market.change24h) || 0;
+      const tokenPair = extractTokenPair(market.ticker);
+
+      allMarkets.push({
+        id: `${LIGHTER_EXCHANGE}-${market.ticker}`,
+        symbol: market.ticker,
+        name: tokenPair,
+        price,
+        priceChange,
+        exchange: LIGHTER_EXCHANGE,
+        fundingRate: 0, // Lighter market list API doesn't return funding rate
         volatile: Math.abs(priceChange) >= VOLATILITY_THRESHOLD,
       });
     });
