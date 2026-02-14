@@ -50,6 +50,14 @@ const ASTER_EXCHANGE = 'Aster';
 const LIGHTER_EXCHANGE = 'Lighter';
 const VOLATILITY_THRESHOLD = 5;
 const PRICE_REFRESH_MS = 10000;
+const EXCHANGE_FILTER_OPTIONS = [
+  'All',
+  HYPERLIQUID_EXCHANGE,
+  DYDX_EXCHANGE,
+  GMX_EXCHANGE,
+  ASTER_EXCHANGE,
+  LIGHTER_EXCHANGE,
+] as const;
 
 const PORTFOLIO_VALUE = 124592.40;
 const WALLET_ADDRESS = '0x84...9a2';
@@ -220,6 +228,7 @@ interface MarketListScreenProps {
 export default function MarketListScreen({ onMarketPress }: MarketListScreenProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
+  const [selectedExchange, setSelectedExchange] = useState<(typeof EXCHANGE_FILTER_OPTIONS)[number]>('All');
 
   const client = useMemo(() => {
     return new PublicClient({
@@ -397,14 +406,17 @@ export default function MarketListScreen({ onMarketPress }: MarketListScreenProp
       const matchesSearch =
         !normalizedQuery ||
         market.tokenPair.toLowerCase().includes(normalizedQuery);
+      const matchesExchange =
+        selectedExchange === 'All' ||
+        market.markets.some((m) => m.exchange === selectedExchange);
 
       if (activeFilter === 'volatility') {
-        return matchesSearch && market.volatile;
+        return matchesSearch && matchesExchange && market.volatile;
       }
 
-      return matchesSearch;
+      return matchesSearch && matchesExchange;
     });
-  }, [activeFilter, groupedMarkets, searchQuery]);
+  }, [activeFilter, groupedMarkets, searchQuery, selectedExchange]);
 
   const renderMarketRow = useCallback(({ item }: { item: GroupedMarket }) => {
     const handlePress = (market: GroupedMarket) => {
@@ -531,6 +543,27 @@ export default function MarketListScreen({ onMarketPress }: MarketListScreenProp
             Funds
           </Text>
         </TouchableOpacity>
+      </ScrollView>
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.filterTabs}
+        contentContainerStyle={styles.filterTabsContent}
+      >
+        {EXCHANGE_FILTER_OPTIONS.map((exchange) => (
+          <TouchableOpacity
+            key={exchange}
+            style={[styles.filterTab, selectedExchange === exchange && styles.filterTabActive]}
+            onPress={() => setSelectedExchange(exchange)}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: selectedExchange === exchange }}
+          >
+            <Text style={[styles.filterTabText, selectedExchange === exchange && styles.filterTabTextActive]}>
+              {exchange}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </ScrollView>
 
       {/* Table Headers */}
