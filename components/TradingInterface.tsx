@@ -1,7 +1,6 @@
 import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import {
-  TradingHeader,
   PriceStats,
   ConnectionBanner,
   TabBar,
@@ -162,7 +161,6 @@ export default function TradingInterface({ selectedMarket, onOpenTradingForm }: 
   const baseMarkPrice = 64230.5;
   const indexPrice = 64215.1;
   const volume24h = 1.2;
-  const priceChange = 2.4;
   const available = 12450.0;
 
   const bestBid = orderBook?.bids[0]?.price;
@@ -209,6 +207,10 @@ export default function TradingInterface({ selectedMarket, onOpenTradingForm }: 
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
+        <View style={styles.pairHeader}>
+          <Text style={styles.pairHeaderText}>{pairLabel}</Text>
+        </View>
+
         <View style={styles.exchangeTabs}>
           <TabBar
             tabs={EXCHANGE_TABS}
@@ -216,8 +218,6 @@ export default function TradingInterface({ selectedMarket, onOpenTradingForm }: 
             onTabChange={handleExchangeChange}
           />
         </View>
-
-        <TradingHeader pairLabel={pairLabel} priceChange={priceChange} />
 
         {isConnectedExchange ? (
           <PriceStats
@@ -340,6 +340,17 @@ const styles = StyleSheet.create({
   },
   exchangeTabs: {
     backgroundColor: '#141926',
+  },
+  pairHeader: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+    backgroundColor: '#141926',
+  },
+  pairHeaderText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '700',
   },
   chartPanel: {
     marginTop: 4,
