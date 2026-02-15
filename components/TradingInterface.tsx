@@ -7,6 +7,7 @@ import {
   TimeIntervalBar,
   OrderBook,
   RecentTrades,
+  DepthTradeChart,
   useHyperliquidData,
   useDydxData,
   useGmxData,
@@ -22,7 +23,7 @@ import { loadSelectedExchange, saveSelectedExchange } from '../utils/exchangeSto
 const CONTENT_TAB_LABELS: Record<TabType, string> = {
   orderBook: 'Order Book',
   recentTrades: 'Recent Trades',
-  info: 'Info',
+  info: 'Depth Chart',
 };
 
 // Tab definitions (stable references)
@@ -306,9 +307,12 @@ export default function TradingInterface({ selectedMarket, availableExchanges, o
               )}
 
               {activeTab === 'info' && (
-                <View style={styles.tabContent}>
-                  <Text style={styles.tabContentText}>Info</Text>
-                </View>
+                <DepthTradeChart
+                  bids={displayedBids}
+                  asks={displayedAsks}
+                  trades={recentTrades}
+                  connectionState={connectionState}
+                />
               )}
             </>
           ) : (
