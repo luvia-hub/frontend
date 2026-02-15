@@ -15,6 +15,7 @@ import { fetchDydxMarkets } from '../services/dydx';
 import { fetchGmxMarkets } from '../services/gmx';
 import { fetchAsterMarkets } from '../services/aster';
 import { fetchLighterMarkets } from '../services/lighter';
+import { useWallet } from '../contexts/WalletContext';
 import type { ExchangeType } from './trading';
 
 interface Market {
@@ -68,7 +69,6 @@ const EXCHANGE_KEY_BY_LABEL: Record<string, ExchangeType> = {
 };
 
 const PORTFOLIO_VALUE = 124592.40;
-const WALLET_ADDRESS = '0x84...9a2';
 const VOLUME_CHANGE = 5.2;
 const OPACITY_LIGHT = '20'; // ~12% opacity for badge backgrounds
 
@@ -235,9 +235,13 @@ interface MarketListScreenProps {
 }
 
 export default function MarketListScreen({ onMarketPress }: MarketListScreenProps) {
+  const wallet = useWallet();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
   const [selectedExchange, setSelectedExchange] = useState<(typeof EXCHANGE_FILTER_OPTIONS)[number]>('All');
+  const walletDisplayAddress = wallet.address
+    ? `${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)}`
+    : 'Not connected';
 
   const client = useMemo(() => {
     return new PublicClient({
@@ -467,7 +471,7 @@ export default function MarketListScreen({ onMarketPress }: MarketListScreenProp
             accessibilityLabel="Copy wallet address"
           >
             <Copy size={14} color="#3B82F6" />
-            <Text style={styles.walletText}>{WALLET_ADDRESS}</Text>
+            <Text style={styles.walletText}>{walletDisplayAddress}</Text>
           </TouchableOpacity>
         </View>
       </View>
