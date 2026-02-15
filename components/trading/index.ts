@@ -6,6 +6,7 @@ export { default as TimeIntervalBar } from './TimeIntervalBar';
 export { default as IndicatorToggleList } from './IndicatorToggleList';
 export { default as OrderBook } from './OrderBook';
 export { default as RecentTrades } from './RecentTrades';
+export { default as DepthTradeChart } from './DepthTradeChart';
 export { default as LeverageSelector } from './LeverageSelector';
 export { default as SizeInput } from './SizeInput';
 export { default as PriceInput } from './PriceInput';

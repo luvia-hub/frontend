@@ -7,6 +7,7 @@ import {
   TimeIntervalBar,
   OrderBook,
   RecentTrades,
+  DepthTradeChart,
   useHyperliquidData,
   useDydxData,
   useGmxData,
@@ -22,14 +23,14 @@ import { loadSelectedExchange, saveSelectedExchange } from '../utils/exchangeSto
 const CONTENT_TAB_LABELS: Record<TabType, string> = {
   orderBook: 'Order Book',
   recentTrades: 'Recent Trades',
-  info: 'Info',
+  depthChart: 'Depth Chart',
 };
 
 // Tab definitions (stable references)
 const CONTENT_TABS: { key: TabType; label: string }[] = [
   { key: 'orderBook', label: CONTENT_TAB_LABELS.orderBook },
   { key: 'recentTrades', label: CONTENT_TAB_LABELS.recentTrades },
-  { key: 'info', label: CONTENT_TAB_LABELS.info },
+  { key: 'depthChart', label: CONTENT_TAB_LABELS.depthChart },
 ];
 
 const EXCHANGE_LABELS: Record<ExchangeType, string> = {
@@ -261,24 +262,25 @@ export default function TradingInterface({ selectedMarket, availableExchanges, o
           </View>
         )}
 
-        {/* Chart Panel */}
-        <View style={[styles.panel, styles.chartPanel]}>
-          {isConnectedExchange ? (
-            <TimeIntervalBar
-              timeInterval={timeInterval}
-              onTimeIntervalChange={handleTimeIntervalChange}
-              chartData={chartData}
-              activeIndicators={activeIndicators}
-              onToggleIndicator={handleToggleIndicator}
-            />
-          ) : (
-            <View style={styles.exchangePlaceholder}>
-              <Text style={styles.exchangePlaceholderText}>
-                {activeExchangeLabel} chart data will appear here once connected.
-              </Text>
-            </View>
-          )}
-        </View>
+        {activeTab !== 'depthChart' && (
+          <View style={[styles.panel, styles.chartPanel]}>
+            {isConnectedExchange ? (
+              <TimeIntervalBar
+                timeInterval={timeInterval}
+                onTimeIntervalChange={handleTimeIntervalChange}
+                chartData={chartData}
+                activeIndicators={activeIndicators}
+                onToggleIndicator={handleToggleIndicator}
+              />
+            ) : (
+              <View style={styles.exchangePlaceholder}>
+                <Text style={styles.exchangePlaceholderText}>
+                  {activeExchangeLabel} chart data will appear here once connected.
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
 
         {/* Order Book / Recent Trades Panel */}
         <View style={[styles.panel, styles.dataPanel]}>
@@ -305,10 +307,13 @@ export default function TradingInterface({ selectedMarket, availableExchanges, o
                 />
               )}
 
-              {activeTab === 'info' && (
-                <View style={styles.tabContent}>
-                  <Text style={styles.tabContentText}>Info</Text>
-                </View>
+              {activeTab === 'depthChart' && (
+                <DepthTradeChart
+                  bids={displayedBids}
+                  asks={displayedAsks}
+                  trades={recentTrades}
+                  connectionState={connectionState}
+                />
               )}
             </>
           ) : (
