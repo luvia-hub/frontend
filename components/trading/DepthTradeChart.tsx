@@ -12,6 +12,7 @@ interface DepthTradeChartProps {
 
 const CHART_HEIGHT = 180;
 const MAX_TRADE_MARKERS = 16;
+const VIEWBOX_HEIGHT = 60;
 
 function toCumulative(levels: OrderBookLevel[]) {
   let cumulative = 0;
@@ -56,7 +57,7 @@ function DepthTradeChart({ bids, asks, trades, connectionState }: DepthTradeChar
 
   const toPoint = (price: number, cumulative: number) => {
     const x = ((price - minPrice) / priceRange) * 100;
-    const y = 60 - (cumulative / maxDepth) * 60;
+    const y = VIEWBOX_HEIGHT - (cumulative / maxDepth) * VIEWBOX_HEIGHT;
     return `${x},${y}`;
   };
 
@@ -66,7 +67,7 @@ function DepthTradeChart({ bids, asks, trades, connectionState }: DepthTradeChar
 
   return (
     <View style={styles.container}>
-      <Svg width="100%" height={CHART_HEIGHT} viewBox="0 0 100 60" preserveAspectRatio="none">
+      <Svg width="100%" height={CHART_HEIGHT} viewBox={`0 0 100 ${VIEWBOX_HEIGHT}`} preserveAspectRatio="none">
         {bidPoints ? <Polyline points={bidPoints} fill="none" stroke="#22C55E" strokeWidth={1.2} /> : null}
         {askPoints ? <Polyline points={askPoints} fill="none" stroke="#EF4444" strokeWidth={1.2} /> : null}
         {tradeMarkers.map((trade, index) => {
