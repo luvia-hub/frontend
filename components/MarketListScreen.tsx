@@ -15,6 +15,7 @@ import { fetchDydxMarkets } from '../services/dydx';
 import { fetchGmxMarkets } from '../services/gmx';
 import { fetchAsterMarkets } from '../services/aster';
 import { fetchLighterMarkets } from '../services/lighter';
+import type { ExchangeType } from './trading';
 
 interface Market {
   id: string;
@@ -58,6 +59,13 @@ const EXCHANGE_FILTER_OPTIONS = [
   ASTER_EXCHANGE,
   LIGHTER_EXCHANGE,
 ] as const;
+const EXCHANGE_KEY_BY_LABEL: Record<string, ExchangeType> = {
+  [HYPERLIQUID_EXCHANGE]: 'hyperliquid',
+  [DYDX_EXCHANGE]: 'dydx',
+  [GMX_EXCHANGE]: 'gmx',
+  [ASTER_EXCHANGE]: 'aster',
+  [LIGHTER_EXCHANGE]: 'lighter',
+};
 
 const PORTFOLIO_VALUE = 124592.40;
 const WALLET_ADDRESS = '0x84...9a2';
@@ -219,6 +227,7 @@ const MarketRow = React.memo(function MarketRow({ market, onPress }: MarketRowPr
 interface MarketSelection {
   symbol: string;
   name: string;
+  exchanges: ExchangeType[];
 }
 
 interface MarketListScreenProps {
@@ -422,7 +431,14 @@ export default function MarketListScreen({ onMarketPress }: MarketListScreenProp
     const handlePress = (market: GroupedMarket) => {
       // Pass the market with the best price to the parent
       const bestMarket = market.markets.find(m => m.price === market.bestPrice) || market.markets[0];
-      onMarketPress?.({ symbol: bestMarket.symbol, name: market.tokenPair });
+      const exchanges = Array.from(
+        new Set(
+          market.markets
+            .map((m) => EXCHANGE_KEY_BY_LABEL[m.exchange])
+            .filter((exchange): exchange is ExchangeType => Boolean(exchange)),
+        ),
+      );
+      onMarketPress?.({ symbol: bestMarket.symbol, name: market.tokenPair, exchanges });
     };
     
     return <MarketRow market={item} onPress={handlePress} />;
