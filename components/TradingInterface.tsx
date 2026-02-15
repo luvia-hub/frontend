@@ -50,10 +50,11 @@ const EXCHANGE_TABS: { key: ExchangeType; label: string }[] = [
 
 interface TradingInterfaceProps {
   selectedMarket?: string;
+  availableExchanges?: ExchangeType[];
   onOpenTradingForm: () => void;
 }
 
-export default function TradingInterface({ selectedMarket, onOpenTradingForm }: TradingInterfaceProps) {
+export default function TradingInterface({ selectedMarket, availableExchanges, onOpenTradingForm }: TradingInterfaceProps) {
   const [activeTab, setActiveTab] = useState<TabType>('orderBook');
   const [activeExchange, setActiveExchange] = useState<ExchangeType>('hyperliquid');
   const [timeInterval, setTimeInterval] = useState<TimeInterval>('15m');
@@ -112,6 +113,13 @@ export default function TradingInterface({ selectedMarket, onOpenTradingForm }: 
 
   const selectedPair = selectedMarket ?? DEFAULT_PAIR;
   const pairLabel = `${selectedPair}/USD`;
+  const visibleExchangeTabs = useMemo(
+    () =>
+      availableExchanges && availableExchanges.length > 0
+        ? EXCHANGE_TABS.filter((tab) => availableExchanges.includes(tab.key))
+        : EXCHANGE_TABS,
+    [availableExchanges],
+  );
 
   // Live data from Hyperliquid
   const hyperliquidData = useHyperliquidData(selectedPair, timeInterval);
@@ -185,6 +193,13 @@ export default function TradingInterface({ selectedMarket, onOpenTradingForm }: 
   const activeExchangeLabel = useMemo(() => EXCHANGE_LABELS[activeExchange], [activeExchange]);
   const activeContentTabLabel = useMemo(() => CONTENT_TAB_LABELS[activeTab], [activeTab]);
 
+  useEffect(() => {
+    const fallbackExchange = visibleExchangeTabs[0]?.key;
+    if (fallbackExchange && !visibleExchangeTabs.some((tab) => tab.key === activeExchange)) {
+      setActiveExchange(fallbackExchange);
+    }
+  }, [activeExchange, visibleExchangeTabs]);
+
   // Stable callbacks for child components
   const handleTabChange = useCallback((tab: TabType) => setActiveTab(tab), []);
   const handleExchangeChange = useCallback((exchange: ExchangeType) => setActiveExchange(exchange), []);
@@ -213,7 +228,7 @@ export default function TradingInterface({ selectedMarket, onOpenTradingForm }: 
 
         <View style={styles.exchangeTabs}>
           <TabBar
-            tabs={EXCHANGE_TABS}
+            tabs={visibleExchangeTabs}
             activeTab={activeExchange}
             onTabChange={handleExchangeChange}
           />

@@ -14,6 +14,7 @@ import ActivePositionsScreen from './components/ActivePositionsScreen';
 import WalletConnectScreen from './components/WalletConnectScreen';
 import { WalletProvider } from './contexts/WalletContext';
 import { useAppNavigationStore } from './stores/useAppNavigationStore';
+import type { ExchangeType } from './components/trading';
 
 function AppContent() {
   const activeTab = useAppNavigationStore((state) => state.activeTab);
@@ -21,11 +22,13 @@ function AppContent() {
   const showActivePositions = useAppNavigationStore((state) => state.showActivePositions);
   const showTradingForm = useAppNavigationStore((state) => state.showTradingForm);
   const selectedMarket = useAppNavigationStore((state) => state.selectedMarket);
+  const selectedMarketExchanges = useAppNavigationStore((state) => state.selectedMarketExchanges);
   const setActiveTab = useAppNavigationStore((state) => state.setActiveTab);
   const setShowConnectSources = useAppNavigationStore((state) => state.setShowConnectSources);
   const setShowActivePositions = useAppNavigationStore((state) => state.setShowActivePositions);
   const setShowTradingForm = useAppNavigationStore((state) => state.setShowTradingForm);
   const setSelectedMarket = useAppNavigationStore((state) => state.setSelectedMarket);
+  const setSelectedMarketExchanges = useAppNavigationStore((state) => state.setSelectedMarketExchanges);
 
   const getHeaderTitle = () => {
     switch (activeTab) {
@@ -44,8 +47,9 @@ function AppContent() {
     }
   };
 
-  const handleMarketPress = (market: { symbol: string; name: string }) => {
+  const handleMarketPress = (market: { symbol: string; name: string; exchanges: ExchangeType[] }) => {
     setSelectedMarket(market.name);
+    setSelectedMarketExchanges(market.exchanges);
     setActiveTab('trade');
   };
 
@@ -69,6 +73,7 @@ function AppContent() {
         ) : activeTab === 'trade' ? (
           <TradingInterface
             selectedMarket={selectedMarket}
+            availableExchanges={selectedMarketExchanges}
             onOpenTradingForm={() => setShowTradingForm(true)}
           />
         ) : activeTab === 'earn' ? (
