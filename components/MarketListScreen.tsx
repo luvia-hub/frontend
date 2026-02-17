@@ -11,6 +11,7 @@ import {
 import { Search, SlidersHorizontal, Star, TrendingUp, TrendingDown, Copy } from 'lucide-react-native';
 import { PublicClient, HttpTransport } from '@far1s/hyperliquid';
 import { useQuery } from '@tanstack/react-query';
+import { useShallow } from 'zustand/react/shallow';
 import { fetchDydxMarkets } from '../services/dydx';
 import { fetchGmxMarkets } from '../services/gmx';
 import { fetchAsterMarkets } from '../services/aster';
@@ -235,9 +236,17 @@ interface MarketListScreenProps {
 
 export default function MarketListScreen({ onMarketPress }: MarketListScreenProps) {
   const wallet = useWallet();
-  const searchQuery = useMarketScreenStore((state) => state.searchQuery);
-  const activeFilter = useMarketScreenStore((state) => state.activeFilter);
-  const selectedExchange = useMarketScreenStore((state) => state.selectedExchange);
+  const {
+    searchQuery,
+    activeFilter,
+    selectedExchange,
+  } = useMarketScreenStore(
+    useShallow((state) => ({
+      searchQuery: state.searchQuery,
+      activeFilter: state.activeFilter,
+      selectedExchange: state.selectedExchange,
+    })),
+  );
   const setSearchQuery = useMarketScreenStore((state) => state.setSearchQuery);
   const setActiveFilter = useMarketScreenStore((state) => state.setActiveFilter);
   const setSelectedExchange = useMarketScreenStore((state) => state.setSelectedExchange);
