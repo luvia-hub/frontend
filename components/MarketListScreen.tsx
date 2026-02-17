@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import { fetchGmxMarkets } from '../services/gmx';
 import { fetchAsterMarkets } from '../services/aster';
 import { fetchLighterMarkets } from '../services/lighter';
 import { useWallet } from '../contexts/WalletContext';
+import { useMarketScreenStore } from '../stores/useMarketScreenStore';
 import type { ExchangeType } from './trading';
 
 interface Market {
@@ -71,8 +72,6 @@ const EXCHANGE_KEY_BY_LABEL: Record<string, ExchangeType> = {
 const PORTFOLIO_VALUE = 124592.40;
 const VOLUME_CHANGE = 5.2;
 const OPACITY_LIGHT = '20'; // ~12% opacity for badge backgrounds
-
-type FilterTab = 'all' | 'favorites' | 'volatility' | 'funds';
 
 /**
  * Extract the base token pair from a market symbol
@@ -236,9 +235,12 @@ interface MarketListScreenProps {
 
 export default function MarketListScreen({ onMarketPress }: MarketListScreenProps) {
   const wallet = useWallet();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
-  const [selectedExchange, setSelectedExchange] = useState<(typeof EXCHANGE_FILTER_OPTIONS)[number]>('All');
+  const searchQuery = useMarketScreenStore((state) => state.searchQuery);
+  const activeFilter = useMarketScreenStore((state) => state.activeFilter);
+  const selectedExchange = useMarketScreenStore((state) => state.selectedExchange);
+  const setSearchQuery = useMarketScreenStore((state) => state.setSearchQuery);
+  const setActiveFilter = useMarketScreenStore((state) => state.setActiveFilter);
+  const setSelectedExchange = useMarketScreenStore((state) => state.setSelectedExchange);
   const walletDisplayAddress = wallet.address
     ? `${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)}`
     : 'Not connected';
