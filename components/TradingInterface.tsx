@@ -23,14 +23,19 @@ import { loadSelectedExchange, saveSelectedExchange } from '../utils/exchangeSto
 const CONTENT_TAB_LABELS: Record<TabType, string> = {
   orderBook: 'Order Book',
   recentTrades: 'Recent Trades',
-  depthChart: 'Depth Chart',
 };
 
 // Tab definitions (stable references)
 const CONTENT_TABS: { key: TabType; label: string }[] = [
   { key: 'orderBook', label: CONTENT_TAB_LABELS.orderBook },
   { key: 'recentTrades', label: CONTENT_TAB_LABELS.recentTrades },
-  { key: 'depthChart', label: CONTENT_TAB_LABELS.depthChart },
+];
+
+type ChartTabType = 'kline' | 'depthChart';
+
+const CHART_TABS: { key: ChartTabType; label: string }[] = [
+  { key: 'kline', label: 'Kline' },
+  { key: 'depthChart', label: 'Depth Chart' },
 ];
 
 const EXCHANGE_LABELS: Record<ExchangeType, string> = {
@@ -57,6 +62,7 @@ interface TradingInterfaceProps {
 
 export default function TradingInterface({ selectedMarket, availableExchanges, onOpenTradingForm }: TradingInterfaceProps) {
   const [activeTab, setActiveTab] = useState<TabType>('orderBook');
+  const [activeChartTab, setActiveChartTab] = useState<ChartTabType>('kline');
   const [activeExchange, setActiveExchange] = useState<ExchangeType>('hyperliquid');
   const [timeInterval, setTimeInterval] = useState<TimeInterval>('15m');
   const [activeIndicators, setActiveIndicators] = useState<IndicatorType[]>(DEFAULT_ACTIVE_INDICATORS);
@@ -203,6 +209,7 @@ export default function TradingInterface({ selectedMarket, availableExchanges, o
 
   // Stable callbacks for child components
   const handleTabChange = useCallback((tab: TabType) => setActiveTab(tab), []);
+  const handleChartTabChange = useCallback((tab: ChartTabType) => setActiveChartTab(tab), []);
   const handleExchangeChange = useCallback((exchange: ExchangeType) => setActiveExchange(exchange), []);
   const handleTimeIntervalChange = useCallback((interval: TimeInterval) => setTimeInterval(interval), []);
   const handleToggleIndicator = useCallback((indicator: IndicatorType) => {
@@ -262,9 +269,15 @@ export default function TradingInterface({ selectedMarket, availableExchanges, o
           </View>
         )}
 
-        {activeTab !== 'depthChart' && (
-          <View style={[styles.panel, styles.chartPanel]}>
-            {isConnectedExchange ? (
+        <View style={[styles.panel, styles.chartPanel]}>
+          <TabBar
+            tabs={CHART_TABS}
+            activeTab={activeChartTab}
+            onTabChange={handleChartTabChange}
+          />
+          {isConnectedExchange ? (
+            <>
+              {activeChartTab === 'kline' ? (
               <TimeIntervalBar
                 timeInterval={timeInterval}
                 onTimeIntervalChange={handleTimeIntervalChange}
@@ -272,15 +285,23 @@ export default function TradingInterface({ selectedMarket, availableExchanges, o
                 activeIndicators={activeIndicators}
                 onToggleIndicator={handleToggleIndicator}
               />
-            ) : (
-              <View style={styles.exchangePlaceholder}>
-                <Text style={styles.exchangePlaceholderText}>
-                  {activeExchangeLabel} chart data will appear here once connected.
-                </Text>
-              </View>
-            )}
-          </View>
-        )}
+              ) : (
+                <DepthTradeChart
+                  bids={displayedBids}
+                  asks={displayedAsks}
+                  trades={recentTrades}
+                  connectionState={connectionState}
+                />
+              )}
+            </>
+          ) : (
+            <View style={styles.exchangePlaceholder}>
+              <Text style={styles.exchangePlaceholderText}>
+                {activeExchangeLabel} chart data will appear here once connected.
+              </Text>
+            </View>
+          )}
+        </View>
 
         {/* Order Book / Recent Trades Panel */}
         <View style={[styles.panel, styles.dataPanel]}>
@@ -307,14 +328,6 @@ export default function TradingInterface({ selectedMarket, availableExchanges, o
                 />
               )}
 
-              {activeTab === 'depthChart' && (
-                <DepthTradeChart
-                  bids={displayedBids}
-                  asks={displayedAsks}
-                  trades={recentTrades}
-                  connectionState={connectionState}
-                />
-              )}
             </>
           ) : (
             <View style={styles.tabContent}>
