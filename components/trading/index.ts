@@ -16,4 +16,5 @@ export { useDydxData } from './useDydxData';
 export { useGmxData } from './useGmxData';
 export { useLighterData } from './useLighterData';
 export { useAsterData } from './useAsterData';
+export { useUserPositions } from './useUserPositions';
 export * from './types';

@@ -5,71 +5,29 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
-import { ArrowLeft, Menu, Share2, X } from 'lucide-react-native';
+import { ArrowLeft, RefreshCw, Share2, X } from 'lucide-react-native';
+import { useWallet } from '../contexts/WalletContext';
+import { useUserPositions } from './trading/useUserPositions';
+import type { ExchangePosition } from '../services/exchange';
 
-interface Position {
-  id: string;
-  pair: string;
-  icon: string;
-  side: 'Long' | 'Short';
-  leverage: number;
-  pnl: number;
-  pnlPercent: number;
-  entry: number;
-  mark: number;
-  liquidation: number;
-  exchange: string;
-  color: string;
+type Position = ExchangePosition & { id: string; icon: string; color: string };
+
+const COIN_ICONS: Record<string, string> = {
+  ETH: '⟠',
+  BTC: '₿',
+  SOL: '◎',
+};
+
+function getPositionColor(side: 'Long' | 'Short'): string {
+  return side === 'Long' ? '#22C55E' : '#EF4444';
 }
 
-const MOCK_POSITIONS: Position[] = [
-  {
-    id: '1',
-    pair: 'ETH-USD',
-    icon: '⟠',
-    side: 'Long',
-    leverage: 10,
-    pnl: 450.00,
-    pnlPercent: 25.00,
-    entry: 1800.00,
-    mark: 1845.20,
-    liquidation: 1650.00,
-    exchange: 'Hyperliquid',
-    color: '#22C55E',
-  },
-  {
-    id: '2',
-    pair: 'BTC-USD',
-    icon: '₿',
-    side: 'Short',
-    leverage: 20,
-    pnl: -120.00,
-    pnlPercent: -4.20,
-    entry: 65000,
-    mark: 65420,
-    liquidation: 68000,
-    exchange: 'Hyperliquid',
-    color: '#EF4444',
-  },
-  {
-    id: '3',
-    pair: 'SOL-USD',
-    icon: '◎',
-    side: 'Long',
-    leverage: 5,
-    pnl: 85.50,
-    pnlPercent: 12.30,
-    entry: 142.50,
-    mark: 143.10,
-    liquidation: 115.00,
-    exchange: 'dYdX',
-    color: '#22C55E',
-  },
-];
-
-const TOTAL_UNREALIZED_PNL = 1240.50;
-const DAILY_CHANGE_PERCENT = 12.5;
+function getCoinIcon(pair: string): string {
+  const coin = pair.split('-')[0] ?? pair;
+  return COIN_ICONS[coin] ?? '●';
+}
 
 interface FilterChipProps {
   label: string;
@@ -102,10 +60,14 @@ interface PositionCardProps {
 }
 
 function PositionCard({ position, onClose, onShare }: PositionCardProps) {
-  const isProfitable = position.pnl >= 0;
+  const isProfitable = position.unrealizedPnl >= 0;
   const pnlColor = isProfitable ? '#22C55E' : '#EF4444';
   const sideColor = position.side === 'Long' ? '#22C55E' : '#EF4444';
   const sideBg = position.side === 'Long' ? '#22C55E15' : '#EF444415';
+  const pnlPercent =
+    position.positionValue > 0
+      ? (position.unrealizedPnl / position.positionValue) * 100
+      : 0;
 
   return (
     <View style={[styles.positionCard, { borderLeftColor: position.color }]}>
@@ -132,10 +94,10 @@ function PositionCard({ position, onClose, onShare }: PositionCardProps) {
             </Text>
           </View>
           <Text style={[styles.positionPnl, { color: pnlColor }]}>
-            {isProfitable ? '+' : '-'}${Math.abs(position.pnl).toFixed(2)}
+            {isProfitable ? '+' : '-'}${Math.abs(position.unrealizedPnl).toFixed(2)}
           </Text>
           <Text style={[styles.positionPnlPercent, { color: pnlColor }]}>
-            {isProfitable ? '+' : ''}{position.pnlPercent.toFixed(2)}%
+            {isProfitable ? '+' : ''}{pnlPercent.toFixed(2)}%
           </Text>
         </View>
       </View>
@@ -144,15 +106,15 @@ function PositionCard({ position, onClose, onShare }: PositionCardProps) {
       <View style={styles.priceDetails}>
         <View style={styles.priceItem}>
           <Text style={styles.priceLabel}>ENTRY</Text>
-          <Text style={styles.priceValue}>${position.entry.toLocaleString('en-US', { minimumFractionDigits: 2 })}</Text>
+          <Text style={styles.priceValue}>${position.entryPrice.toLocaleString('en-US', { minimumFractionDigits: 2 })}</Text>
         </View>
         <View style={styles.priceItem}>
-          <Text style={styles.priceLabel}>MARK</Text>
-          <Text style={styles.priceValue}>${position.mark.toLocaleString('en-US', { minimumFractionDigits: 2 })}</Text>
+          <Text style={styles.priceLabel}>VALUE</Text>
+          <Text style={styles.priceValue}>${position.positionValue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</Text>
         </View>
         <View style={styles.priceItem}>
           <Text style={styles.priceLabel}>LIQ. PRICE</Text>
-          <Text style={[styles.priceValue, styles.liquidationPrice]}>${position.liquidation.toLocaleString('en-US', { minimumFractionDigits: 2 })}</Text>
+          <Text style={[styles.priceValue, styles.liquidationPrice]}>${position.liquidationPrice.toLocaleString('en-US', { minimumFractionDigits: 2 })}</Text>
         </View>
       </View>
 
@@ -186,8 +148,18 @@ interface ActivePositionsScreenProps {
 
 export default function ActivePositionsScreen({ onBack }: ActivePositionsScreenProps) {
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'hyperliquid' | 'dydx' | 'aster'>('all');
+  const { address } = useWallet();
+  const { positions: rawPositions, isLoading, error, refetch } = useUserPositions(address);
 
-  const filteredPositions = MOCK_POSITIONS.filter(position => {
+  // Enrich raw positions with UI-specific fields
+  const positions: Position[] = rawPositions.map((pos, i) => ({
+    ...pos,
+    id: `${pos.exchange}-${pos.pair}-${i}`,
+    icon: getCoinIcon(pos.pair),
+    color: getPositionColor(pos.side),
+  }));
+
+  const filteredPositions = positions.filter(position => {
     if (selectedFilter === 'all') return true;
     if (selectedFilter === 'hyperliquid') return position.exchange === 'Hyperliquid';
     if (selectedFilter === 'dydx') return position.exchange === 'dYdX';
@@ -195,11 +167,14 @@ export default function ActivePositionsScreen({ onBack }: ActivePositionsScreenP
     return true;
   });
 
-  const handleClosePosition = (id: string) => {
+  const totalUnrealizedPnl = positions.reduce((sum, p) => sum + p.unrealizedPnl, 0);
+  const isPnlPositive = totalUnrealizedPnl >= 0;
+
+  const handleClosePosition = (_id: string) => {
     // Handle close position
   };
 
-  const handleSharePosition = (id: string) => {
+  const handleSharePosition = (_id: string) => {
     // Handle share position
   };
 
@@ -218,10 +193,11 @@ export default function ActivePositionsScreen({ onBack }: ActivePositionsScreenP
         <Text style={styles.headerTitle}>Active Positions</Text>
         <TouchableOpacity
           style={styles.headerButton}
+          onPress={refetch}
           accessibilityRole="button"
-          accessibilityLabel="Menu"
+          accessibilityLabel="Refresh positions"
         >
-          <Menu size={24} color="#FFFFFF" />
+          <RefreshCw size={24} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
 
@@ -239,12 +215,9 @@ export default function ActivePositionsScreen({ onBack }: ActivePositionsScreenP
               <Text style={styles.liveText}>LIVE</Text>
             </View>
           </View>
-          <Text style={styles.pnlCardValue}>+${TOTAL_UNREALIZED_PNL.toLocaleString('en-US', { minimumFractionDigits: 2 })}</Text>
-          <View style={styles.dailyChange}>
-            <Text style={styles.dailyChangeIcon}>📈</Text>
-            <Text style={styles.dailyChangeText}>+{DAILY_CHANGE_PERCENT}%</Text>
-            <Text style={styles.dailyChangeLabel}>Daily Change</Text>
-          </View>
+          <Text style={[styles.pnlCardValue, { color: isPnlPositive ? '#22C55E' : '#EF4444' }]}>
+            {isPnlPositive ? '+' : '-'}${Math.abs(totalUnrealizedPnl).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+          </Text>
         </View>
 
         {/* Filters */}
@@ -278,6 +251,19 @@ export default function ActivePositionsScreen({ onBack }: ActivePositionsScreenP
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>OPEN TRADES ({filteredPositions.length})</Text>
         </View>
+
+        {/* Loading / Error / Empty states */}
+        {isLoading && (
+          <ActivityIndicator color="#3B82F6" style={styles.loader} />
+        )}
+        {!isLoading && error && (
+          <Text style={styles.errorText}>{error}</Text>
+        )}
+        {!isLoading && !error && filteredPositions.length === 0 && (
+          <Text style={styles.emptyText}>
+            {address ? 'No open positions.' : 'Connect your wallet to view positions.'}
+          </Text>
+        )}
 
         {/* Position Cards */}
         {filteredPositions.map((position) => (
@@ -370,24 +356,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: -2,
     marginBottom: 12,
-  },
-  dailyChange: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  dailyChangeIcon: {
-    fontSize: 14,
-  },
-  dailyChangeText: {
-    color: '#22C55E',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  dailyChangeLabel: {
-    color: '#9CA3AF',
-    fontSize: 14,
-    fontWeight: '500',
   },
   filters: {
     flexDirection: 'row',
@@ -566,5 +534,22 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '600',
+  },
+  loader: {
+    marginTop: 32,
+  },
+  errorText: {
+    color: '#EF4444',
+    fontSize: 14,
+    fontWeight: '500',
+    textAlign: 'center',
+    marginTop: 32,
+  },
+  emptyText: {
+    color: '#9CA3AF',
+    fontSize: 14,
+    fontWeight: '500',
+    textAlign: 'center',
+    marginTop: 32,
   },
 });
