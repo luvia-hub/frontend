@@ -1,12 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { ArrowLeft, Menu, Share2, X } from 'lucide-react-native';
+import { useWallet } from '../contexts/WalletContext';
+import { useUserPositions } from './trading/useUserPositions';
+import { EXCHANGE_ADAPTERS } from '../services/exchangeService';
+import type { UserPosition } from '../services/exchangeService';
+
+/** Map from baseAsset ticker to a display icon */
+const ASSET_ICONS: Record<string, string> = {
+  BTC: '₿',
+  ETH: '⟠',
+  SOL: '◎',
+  BNB: '◈',
+  ARB: '◇',
+};
+
+function getAssetIcon(baseAsset: string): string {
+  return ASSET_ICONS[baseAsset] ?? '●';
+}
 
 interface Position {
   id: string;
@@ -21,6 +39,24 @@ interface Position {
   liquidation: number;
   exchange: string;
   color: string;
+}
+
+/** Convert a UserPosition from the service layer to the local display shape */
+function toDisplayPosition(p: UserPosition): Position {
+  return {
+    id: p.id,
+    pair: p.symbol,
+    icon: getAssetIcon(p.baseAsset),
+    side: p.side,
+    leverage: p.leverage,
+    pnl: p.unrealizedPnl,
+    pnlPercent: p.unrealizedPnlPercent,
+    entry: p.entryPrice,
+    mark: p.markPrice,
+    liquidation: p.liquidationPrice,
+    exchange: p.exchange,
+    color: p.unrealizedPnl >= 0 ? '#22C55E' : '#EF4444',
+  };
 }
 
 const MOCK_POSITIONS: Position[] = [
@@ -68,7 +104,6 @@ const MOCK_POSITIONS: Position[] = [
   },
 ];
 
-const TOTAL_UNREALIZED_PNL = 1240.50;
 const DAILY_CHANGE_PERCENT = 12.5;
 
 interface FilterChipProps {
@@ -116,7 +151,7 @@ function PositionCard({ position, onClose, onShare }: PositionCardProps) {
             <Text style={styles.pairIcon}>{position.icon}</Text>
             <View style={styles.exchangeIndicator}>
               <Text style={styles.exchangeIndicatorText}>
-                {position.exchange === 'Hyperliquid' ? 'H' : 'D'}
+                {position.exchange.charAt(0).toUpperCase()}
               </Text>
             </View>
           </View>
@@ -187,7 +222,20 @@ interface ActivePositionsScreenProps {
 export default function ActivePositionsScreen({ onBack }: ActivePositionsScreenProps) {
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'hyperliquid' | 'dydx' | 'aster'>('all');
 
-  const filteredPositions = MOCK_POSITIONS.filter(position => {
+  const { address } = useWallet();
+
+  // Stable adapter map – only re-created when the component mounts
+  const { positions: livePositions, isLoading } = useUserPositions(address, EXCHANGE_ADAPTERS);
+
+  // Use live Aster positions when a wallet is connected; fall back to mock data otherwise
+  const allPositions: Position[] = useMemo(() => {
+    if (address && livePositions.length > 0) {
+      return livePositions.map(toDisplayPosition);
+    }
+    return MOCK_POSITIONS;
+  }, [address, livePositions]);
+
+  const filteredPositions = allPositions.filter(position => {
     if (selectedFilter === 'all') return true;
     if (selectedFilter === 'hyperliquid') return position.exchange === 'Hyperliquid';
     if (selectedFilter === 'dydx') return position.exchange === 'dYdX';
@@ -195,11 +243,14 @@ export default function ActivePositionsScreen({ onBack }: ActivePositionsScreenP
     return true;
   });
 
-  const handleClosePosition = (id: string) => {
+  const totalUnrealizedPnl = allPositions.reduce((sum, p) => sum + p.pnl, 0);
+  const isPnlPositive = totalUnrealizedPnl >= 0;
+
+  const handleClosePosition = (_id: string) => {
     // Handle close position
   };
 
-  const handleSharePosition = (id: string) => {
+  const handleSharePosition = (_id: string) => {
     // Handle share position
   };
 
@@ -235,14 +286,22 @@ export default function ActivePositionsScreen({ onBack }: ActivePositionsScreenP
           <View style={styles.pnlCardHeader}>
             <Text style={styles.pnlCardLabel}>TOTAL UNREALIZED PNL</Text>
             <View style={styles.liveBadge}>
-              <View style={styles.liveDot} />
+              {isLoading ? (
+                <ActivityIndicator size="small" color="#22C55E" />
+              ) : (
+                <View style={styles.liveDot} />
+              )}
               <Text style={styles.liveText}>LIVE</Text>
             </View>
           </View>
-          <Text style={styles.pnlCardValue}>+${TOTAL_UNREALIZED_PNL.toLocaleString('en-US', { minimumFractionDigits: 2 })}</Text>
+          <Text style={[styles.pnlCardValue, { color: isPnlPositive ? '#FFFFFF' : '#EF4444' }]}>
+            {isPnlPositive ? '+' : '-'}${Math.abs(totalUnrealizedPnl).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+          </Text>
           <View style={styles.dailyChange}>
-            <Text style={styles.dailyChangeIcon}>📈</Text>
-            <Text style={styles.dailyChangeText}>+{DAILY_CHANGE_PERCENT}%</Text>
+            <Text style={styles.dailyChangeIcon}>{isPnlPositive ? '📈' : '📉'}</Text>
+            <Text style={[styles.dailyChangeText, { color: isPnlPositive ? '#22C55E' : '#EF4444' }]}>
+              {isPnlPositive ? '+' : ''}{DAILY_CHANGE_PERCENT}%
+            </Text>
             <Text style={styles.dailyChangeLabel}>Daily Change</Text>
           </View>
         </View>

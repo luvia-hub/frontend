@@ -132,6 +132,35 @@ export async function fetchAsterTrades(
   }
 }
 
+export interface AsterPosition {
+  symbol: string;
+  positionAmt: string;
+  entryPrice: string;
+  markPrice: string;
+  unRealizedProfit: string;
+  liquidationPrice: string;
+  leverage: string;
+  positionSide: 'LONG' | 'SHORT' | 'BOTH';
+  marginType?: string;
+  isolatedMargin?: string;
+}
+
+export async function fetchAsterPositions(address: string): Promise<AsterPosition[]> {
+  try {
+    const response = await fetch(
+      `${ASTER_API_URL}/fapi/v1/openPositions?address=${encodeURIComponent(address)}`,
+    );
+    if (!response.ok) {
+      throw new Error(`Aster API error: ${response.status}`);
+    }
+    const data = await response.json();
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.error('Failed to fetch Aster positions:', error);
+    return [];
+  }
+}
+
 export async function fetchAsterCandles(
   symbol: string,
   interval: AsterInterval = '15m',
