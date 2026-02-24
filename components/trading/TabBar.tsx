@@ -1,5 +1,6 @@
 import React, { useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { colors, spacing, typography } from '../../theme';
 
 export interface Tab<T extends string> {
     key: T;
@@ -58,24 +59,24 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         borderBottomWidth: 1,
-        borderBottomColor: '#1E293B',
-        paddingHorizontal: 16,
+        borderBottomColor: colors.border,
+        paddingHorizontal: spacing.lg,
     },
     tabButton: {
-        paddingVertical: 12,
-        paddingHorizontal: 16,
+        paddingVertical: spacing.md,
+        paddingHorizontal: spacing.lg,
         borderBottomWidth: 2,
         borderBottomColor: 'transparent',
     },
     tabButtonActive: {
-        borderBottomColor: '#FFFFFF',
+        borderBottomColor: colors.accent,
     },
     tabButtonText: {
-        color: '#6B7280',
-        fontSize: 13,
-        fontWeight: '600',
+        color: colors.textSubtle,
+        fontSize: typography.size.sm,
+        fontWeight: typography.weight.semibold,
     },
     tabButtonTextActive: {
-        color: '#FFFFFF',
+        color: colors.text,
     },
 });

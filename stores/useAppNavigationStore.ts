@@ -3,7 +3,7 @@ import type { ExchangeType } from '../components/trading/types';
 
 export type Tab = 'home' | 'markets' | 'trade' | 'earn' | 'wallet';
 
-interface AppNavigationState {
+export interface AppNavigationState {
   activeTab: Tab;
   showConnectSources: boolean;
   showActivePositions: boolean;

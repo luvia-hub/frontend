@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import { Activity } from 'lucide-react-native';
 import type { IndicatorType } from './types';
 import { AVAILABLE_INDICATORS } from './types';
+import { colors, radius, spacing, typography } from '../../theme';
 
 interface IndicatorToggleListProps {
     activeIndicators: IndicatorType[];
@@ -51,7 +52,7 @@ function IndicatorToggleList({
     return (
         <View style={styles.container}>
             <View style={styles.labelContainer}>
-                <Activity size={14} color="#6B7280" />
+                <Activity size={14} color={colors.textSubtle} />
             </View>
             <ScrollView
                 horizontal
@@ -70,16 +71,16 @@ const styles = StyleSheet.create({
     container: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 12,
+        marginBottom: spacing.md,
     },
     gridContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: 8,
-        padding: 16,
+        gap: spacing.sm,
+        padding: spacing.lg,
     },
     labelContainer: {
-        marginRight: 8,
+        marginRight: spacing.sm,
     },
     scrollContent: {
         flexDirection: 'row',
@@ -87,31 +88,31 @@ const styles = StyleSheet.create({
         gap: 6,
     },
     pill: {
-        paddingHorizontal: 12,
+        paddingHorizontal: spacing.md,
         paddingVertical: 5,
-        borderRadius: 14,
-        backgroundColor: '#141926',
+        borderRadius: radius.pill,
+        backgroundColor: colors.surface,
         borderWidth: 1,
-        borderColor: '#1E293B',
+        borderColor: colors.border,
     },
     pillGrid: {
         paddingVertical: 8,
-        paddingHorizontal: 16,
-        borderRadius: 8,
-        backgroundColor: '#1E293B',
+        paddingHorizontal: spacing.lg,
+        borderRadius: radius.sm,
+        backgroundColor: colors.border,
         minWidth: '30%',
         alignItems: 'center',
     },
     pillActive: {
-        backgroundColor: '#0F2847',
-        borderColor: '#3B82F6',
+        backgroundColor: colors.surfaceAlt,
+        borderColor: colors.accent,
     },
     pillText: {
-        color: '#6B7280',
-        fontSize: 11,
-        fontWeight: '600',
+        color: colors.textSubtle,
+        fontSize: typography.size.xs,
+        fontWeight: typography.weight.semibold,
     },
     pillTextActive: {
-        color: '#3B82F6',
+        color: colors.accent,
     },
 });

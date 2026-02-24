@@ -4,6 +4,7 @@ import { X } from 'lucide-react-native';
 import { BID_ASK_SPREAD, OrderType } from './types';
 import { useWallet } from '../../contexts/WalletContext';
 import { placeOrder, OrderRequest } from '../../services/hyperliquid';
+import { colors, radius, spacing, typography } from '../../theme';
 
 interface ActionButtonsProps {
     markPrice: number;
@@ -142,6 +143,8 @@ function ActionButtons({ markPrice, orderType, size, price, leverage, selectedPa
                     style={styles.buyButton}
                     onPress={() => handleOrderPress('buy')}
                     disabled={isSubmitting}
+                    activeOpacity={0.85}
+                    hitSlop={6}
                 >
                     <Text style={styles.buyButtonText}>Long / Buy</Text>
                     <Text style={styles.buttonPrice}>{orderPriceDisplay}</Text>
@@ -150,6 +153,8 @@ function ActionButtons({ markPrice, orderType, size, price, leverage, selectedPa
                     style={styles.sellButton}
                     onPress={() => handleOrderPress('sell')}
                     disabled={isSubmitting}
+                    activeOpacity={0.85}
+                    hitSlop={6}
                 >
                     <Text style={styles.sellButtonText}>Short / Sell</Text>
                     <Text style={styles.buttonPrice}>{(parseFloat(orderPriceDisplay) - BID_ASK_SPREAD).toFixed(1)}</Text>
@@ -169,8 +174,9 @@ function ActionButtons({ markPrice, orderType, size, price, leverage, selectedPa
                             <TouchableOpacity
                                 onPress={() => !isSubmitting && setShowConfirmation(false)}
                                 disabled={isSubmitting}
+                                hitSlop={8}
                             >
-                                <X size={24} color="#FFFFFF" />
+                                <X size={24} color={colors.text} />
                             </TouchableOpacity>
                         </View>
 
@@ -231,76 +237,76 @@ export default React.memo(ActionButtons);
 const styles = StyleSheet.create({
     actionButtons: {
         flexDirection: 'row',
-        gap: 12,
-        paddingHorizontal: 16,
-        paddingTop: 8,
-        paddingBottom: 16,
+        gap: spacing.md,
+        paddingHorizontal: spacing.lg,
+        paddingTop: spacing.sm,
+        paddingBottom: spacing.lg,
     },
     buyButton: {
         flex: 1,
-        backgroundColor: '#22C55E',
-        borderRadius: 8,
+        backgroundColor: colors.success,
+        borderRadius: radius.sm,
         paddingVertical: 16,
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: '#22C55E',
+        borderColor: colors.success,
     },
     buyButtonText: {
-        color: '#FFFFFF',
-        fontSize: 16,
-        fontWeight: '700',
+        color: colors.text,
+        fontSize: typography.size.lg,
+        fontWeight: typography.weight.bold,
         marginBottom: 2,
     },
     sellButton: {
         flex: 1,
-        backgroundColor: 'transparent',
-        borderRadius: 8,
+        backgroundColor: colors.surfaceAlt,
+        borderRadius: radius.sm,
         paddingVertical: 16,
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: '#EF4444',
+        borderColor: colors.danger,
     },
     sellButtonText: {
-        color: '#EF4444',
-        fontSize: 16,
-        fontWeight: '700',
+        color: colors.danger,
+        fontSize: typography.size.lg,
+        fontWeight: typography.weight.bold,
         marginBottom: 2,
     },
     buttonPrice: {
-        color: '#9CA3AF',
-        fontSize: 13,
-        fontWeight: '500',
+        color: colors.textMuted,
+        fontSize: typography.size.sm,
+        fontWeight: typography.weight.medium,
     },
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        backgroundColor: colors.backdrop,
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 16,
+        padding: spacing.lg,
     },
     modalContent: {
-        backgroundColor: '#141926',
-        borderRadius: 16,
-        padding: 24,
+        backgroundColor: colors.surface,
+        borderRadius: radius.lg,
+        padding: spacing.xxl,
         width: '100%',
         maxWidth: 400,
         borderWidth: 1,
-        borderColor: '#1E293B',
+        borderColor: colors.border,
     },
     modalHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 24,
+        marginBottom: spacing.xxl,
     },
     modalTitle: {
-        color: '#FFFFFF',
-        fontSize: 20,
-        fontWeight: '700',
+        color: colors.text,
+        fontSize: typography.size.xl,
+        fontWeight: typography.weight.bold,
     },
     modalBody: {
         gap: 16,
-        marginBottom: 24,
+        marginBottom: spacing.xxl,
     },
     orderDetail: {
         flexDirection: 'row',
@@ -308,56 +314,56 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     detailLabel: {
-        color: '#9CA3AF',
-        fontSize: 14,
-        fontWeight: '500',
+        color: colors.textMuted,
+        fontSize: typography.size.md,
+        fontWeight: typography.weight.medium,
     },
     detailValue: {
-        color: '#FFFFFF',
-        fontSize: 14,
-        fontWeight: '700',
+        color: colors.text,
+        fontSize: typography.size.md,
+        fontWeight: typography.weight.bold,
     },
     buyText: {
-        color: '#22C55E',
+        color: colors.success,
     },
     sellText: {
-        color: '#EF4444',
+        color: colors.danger,
     },
     modalActions: {
         flexDirection: 'row',
-        gap: 12,
+        gap: spacing.md,
     },
     modalButton: {
         flex: 1,
         paddingVertical: 14,
-        borderRadius: 8,
+        borderRadius: radius.sm,
         alignItems: 'center',
         justifyContent: 'center',
     },
     cancelButton: {
         backgroundColor: 'transparent',
         borderWidth: 1,
-        borderColor: '#1E293B',
+        borderColor: colors.border,
     },
     cancelButtonText: {
-        color: '#FFFFFF',
-        fontSize: 16,
-        fontWeight: '700',
+        color: colors.text,
+        fontSize: typography.size.lg,
+        fontWeight: typography.weight.bold,
     },
     confirmButton: {
         borderWidth: 1,
     },
     confirmBuyButton: {
-        backgroundColor: '#22C55E',
-        borderColor: '#22C55E',
+        backgroundColor: colors.success,
+        borderColor: colors.success,
     },
     confirmSellButton: {
-        backgroundColor: '#EF4444',
-        borderColor: '#EF4444',
+        backgroundColor: colors.danger,
+        borderColor: colors.danger,
     },
     confirmButtonText: {
-        color: '#FFFFFF',
-        fontSize: 16,
-        fontWeight: '700',
+        color: colors.text,
+        fontSize: typography.size.lg,
+        fontWeight: typography.weight.bold,
     },
 });

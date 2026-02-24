@@ -8,9 +8,9 @@ import {
     Animated,
     Dimensions,
     TouchableWithoutFeedback,
-    Platform,
 } from 'react-native';
 import { X } from 'lucide-react-native';
+import { colors, radius, spacing, typography } from '../../theme';
 
 interface BottomSheetProps {
     isVisible: boolean;
@@ -102,7 +102,7 @@ export default function BottomSheet({
                     <View style={styles.header}>
                         <Text style={styles.title}>{title}</Text>
                         <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                            <X size={24} color="#9CA3AF" />
+                            <X size={24} color={colors.textMuted} />
                         </TouchableOpacity>
                     </View>
 
@@ -120,12 +120,12 @@ const styles = StyleSheet.create({
     },
     backdrop: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        backgroundColor: colors.backdrop,
     },
     sheet: {
-        backgroundColor: '#141926',
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
+        backgroundColor: colors.surface,
+        borderTopLeftRadius: radius.xl,
+        borderTopRightRadius: radius.xl,
         shadowColor: '#000',
         shadowOffset: {
             width: 0,
@@ -138,29 +138,29 @@ const styles = StyleSheet.create({
     },
     handleContainer: {
         alignItems: 'center',
-        paddingTop: 8,
-        paddingBottom: 4,
+        paddingTop: spacing.sm,
+        paddingBottom: spacing.xs,
         width: '100%',
     },
     handle: {
         width: 40,
         height: 4,
-        backgroundColor: '#334155',
+        backgroundColor: colors.handle,
         borderRadius: 2,
     },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: 20,
-        paddingVertical: 12,
+        paddingHorizontal: spacing.xl,
+        paddingVertical: spacing.md,
         borderBottomWidth: 1,
-        borderBottomColor: '#1E293B',
+        borderBottomColor: colors.border,
     },
     title: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#FFFFFF',
+        fontSize: typography.size.lg,
+        fontWeight: typography.weight.semibold,
+        color: colors.text,
     },
     closeButton: {
         padding: 4,

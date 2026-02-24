@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { ArrowLeft, MoreVertical } from 'lucide-react-native';
+import { colors, radius, spacing, typography } from '../../theme';
 
 interface TradingHeaderProps {
     pairLabel: string;
@@ -8,10 +9,13 @@ interface TradingHeaderProps {
 }
 
 function TradingHeader({ pairLabel, priceChange }: TradingHeaderProps) {
+    const isPositive = priceChange >= 0;
+    const formattedChange = `${isPositive ? '+' : ''}${priceChange.toFixed(2)}%`;
+
     return (
         <View style={styles.header}>
-            <TouchableOpacity style={styles.backButton}>
-                <ArrowLeft size={24} color="#FFFFFF" />
+            <TouchableOpacity style={styles.backButton} activeOpacity={0.7} hitSlop={8}>
+                <ArrowLeft size={24} color={colors.text} />
             </TouchableOpacity>
             <View style={styles.headerCenter}>
                 <View style={styles.pairRow}>
@@ -22,11 +26,13 @@ function TradingHeader({ pairLabel, priceChange }: TradingHeaderProps) {
                 </View>
                 <View style={styles.priceRow}>
                     <Text style={styles.coinName}>Bitcoin</Text>
-                    <Text style={styles.priceChange}>+{priceChange}%</Text>
+                    <Text style={[styles.priceChange, isPositive ? styles.priceChangeUp : styles.priceChangeDown]}>
+                        {formattedChange}
+                    </Text>
                 </View>
             </View>
-            <TouchableOpacity style={styles.moreButton}>
-                <MoreVertical size={24} color="#FFFFFF" />
+            <TouchableOpacity style={styles.moreButton} activeOpacity={0.7} hitSlop={8}>
+                <MoreVertical size={24} color={colors.text} />
             </TouchableOpacity>
         </View>
     );
@@ -39,10 +45,10 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: 16,
-        backgroundColor: '#141926',
+        padding: spacing.lg,
+        backgroundColor: colors.surface,
         borderBottomWidth: 1,
-        borderBottomColor: '#1E293B',
+        borderBottomColor: colors.border,
     },
     backButton: {
         padding: 4,
@@ -58,20 +64,20 @@ const styles = StyleSheet.create({
         marginBottom: 4,
     },
     pairText: {
-        color: '#FFFFFF',
-        fontSize: 16,
-        fontWeight: '700',
+        color: colors.text,
+        fontSize: typography.size.lg,
+        fontWeight: typography.weight.bold,
     },
     perpBadge: {
-        backgroundColor: '#3B82F6',
-        paddingHorizontal: 8,
+        backgroundColor: colors.accent,
+        paddingHorizontal: spacing.sm,
         paddingVertical: 2,
-        borderRadius: 4,
+        borderRadius: radius.sm,
     },
     perpText: {
-        color: '#FFFFFF',
+        color: colors.text,
         fontSize: 10,
-        fontWeight: '700',
+        fontWeight: typography.weight.bold,
     },
     priceRow: {
         flexDirection: 'row',
@@ -79,13 +85,18 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     coinName: {
-        color: '#9CA3AF',
-        fontSize: 11,
+        color: colors.textMuted,
+        fontSize: typography.size.xs,
     },
     priceChange: {
-        color: '#22C55E',
-        fontSize: 11,
-        fontWeight: '600',
+        fontSize: typography.size.xs,
+        fontWeight: typography.weight.semibold,
+    },
+    priceChangeUp: {
+        color: colors.success,
+    },
+    priceChangeDown: {
+        color: colors.danger,
     },
     moreButton: {
         padding: 4,

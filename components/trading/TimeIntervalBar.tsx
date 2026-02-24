@@ -6,6 +6,7 @@ import IndicatorToggleList from './IndicatorToggleList';
 import BottomSheet from '../ui/BottomSheet';
 import type { CandleData, TimeInterval, IndicatorType } from './types';
 import { TIME_INTERVALS } from './types';
+import { colors, radius, spacing, typography } from '../../theme';
 
 interface TimeIntervalBarProps {
     timeInterval: TimeInterval;
@@ -51,13 +52,16 @@ function TimeIntervalBar({
                         style={styles.chartIconButton}
                         onPress={() => setIndicatorSheetVisible(true)}
                     >
-                        <Layers size={18} color={activeIndicators.length > 0 ? "#3B82F6" : "#6B7280"} />
+                        <Layers
+                            size={18}
+                            color={activeIndicators.length > 0 ? colors.accent : colors.textSubtle}
+                        />
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.chartIconButton}>
-                        <Settings size={18} color="#6B7280" />
+                        <Settings size={18} color={colors.textSubtle} />
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.chartIconButton}>
-                        <Maximize2 size={18} color="#6B7280" />
+                        <Maximize2 size={18} color={colors.textSubtle} />
                     </TouchableOpacity>
                 </View>
             </View>
@@ -90,36 +94,36 @@ export default React.memo(TimeIntervalBar);
 
 const styles = StyleSheet.create({
     chartSection: {
-        paddingHorizontal: 16,
-        paddingVertical: 12,
+        paddingHorizontal: spacing.lg,
+        paddingVertical: spacing.md,
     },
     timeIntervals: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 16,
-        gap: 8,
+        marginBottom: spacing.lg,
+        gap: spacing.sm,
     },
     intervalButton: {
-        paddingHorizontal: 12,
+        paddingHorizontal: spacing.md,
         paddingVertical: 6,
-        borderRadius: 6,
-        backgroundColor: '#141926',
+        borderRadius: radius.sm,
+        backgroundColor: colors.surface,
     },
     intervalButtonActive: {
-        backgroundColor: '#1E293B',
+        backgroundColor: colors.border,
     },
     intervalText: {
-        color: '#6B7280',
-        fontSize: 12,
-        fontWeight: '600',
+        color: colors.textSubtle,
+        fontSize: typography.size.sm,
+        fontWeight: typography.weight.semibold,
     },
     intervalTextActive: {
-        color: '#FFFFFF',
+        color: colors.text,
     },
     chartActions: {
         flexDirection: 'row',
         marginLeft: 'auto',
-        gap: 8,
+        gap: spacing.sm,
     },
     chartIconButton: {
         padding: 6,

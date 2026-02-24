@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { Home, BarChart3, ArrowRightLeft, TrendingUp, Wallet } from 'lucide-react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { colors, radius, spacing, typography } from './theme';
 import DashboardScreen from './components/DashboardScreen';
 import CryptoPortfolioDashboard from './components/CryptoPortfolioDashboard';
 import TradingInterface from './components/TradingInterface';
@@ -13,22 +14,22 @@ import MarketListScreen from './components/MarketListScreen';
 import ActivePositionsScreen from './components/ActivePositionsScreen';
 import WalletConnectScreen from './components/WalletConnectScreen';
 import { WalletProvider } from './contexts/WalletContext';
-import { useAppNavigationStore } from './stores/useAppNavigationStore';
+import { useAppNavigationStore, type AppNavigationState } from './stores/useAppNavigationStore';
 import type { ExchangeType } from './components/trading';
 
 function AppContent() {
-  const activeTab = useAppNavigationStore((state) => state.activeTab);
-  const showConnectSources = useAppNavigationStore((state) => state.showConnectSources);
-  const showActivePositions = useAppNavigationStore((state) => state.showActivePositions);
-  const showTradingForm = useAppNavigationStore((state) => state.showTradingForm);
-  const selectedMarket = useAppNavigationStore((state) => state.selectedMarket);
-  const selectedMarketExchanges = useAppNavigationStore((state) => state.selectedMarketExchanges);
-  const setActiveTab = useAppNavigationStore((state) => state.setActiveTab);
-  const setShowConnectSources = useAppNavigationStore((state) => state.setShowConnectSources);
-  const setShowActivePositions = useAppNavigationStore((state) => state.setShowActivePositions);
-  const setShowTradingForm = useAppNavigationStore((state) => state.setShowTradingForm);
-  const setSelectedMarket = useAppNavigationStore((state) => state.setSelectedMarket);
-  const setSelectedMarketExchanges = useAppNavigationStore((state) => state.setSelectedMarketExchanges);
+  const activeTab = useAppNavigationStore((state: AppNavigationState) => state.activeTab);
+  const showConnectSources = useAppNavigationStore((state: AppNavigationState) => state.showConnectSources);
+  const showActivePositions = useAppNavigationStore((state: AppNavigationState) => state.showActivePositions);
+  const showTradingForm = useAppNavigationStore((state: AppNavigationState) => state.showTradingForm);
+  const selectedMarket = useAppNavigationStore((state: AppNavigationState) => state.selectedMarket);
+  const selectedMarketExchanges = useAppNavigationStore((state: AppNavigationState) => state.selectedMarketExchanges);
+  const setActiveTab = useAppNavigationStore((state: AppNavigationState) => state.setActiveTab);
+  const setShowConnectSources = useAppNavigationStore((state: AppNavigationState) => state.setShowConnectSources);
+  const setShowActivePositions = useAppNavigationStore((state: AppNavigationState) => state.setShowActivePositions);
+  const setShowTradingForm = useAppNavigationStore((state: AppNavigationState) => state.setShowTradingForm);
+  const setSelectedMarket = useAppNavigationStore((state: AppNavigationState) => state.setSelectedMarket);
+  const setSelectedMarketExchanges = useAppNavigationStore((state: AppNavigationState) => state.setSelectedMarketExchanges);
 
   const getHeaderTitle = () => {
     switch (activeTab) {
@@ -122,13 +123,15 @@ function AppContent() {
           <TouchableOpacity
             style={styles.tabItem}
             onPress={() => setActiveTab('home')}
+            activeOpacity={0.7}
+            hitSlop={8}
             accessibilityRole="tab"
             accessibilityLabel="Home tab"
             accessibilityState={{ selected: activeTab === 'home' }}
           >
             <Home
               size={22}
-              color={activeTab === 'home' ? '#FFFFFF' : '#6B7280'}
+              color={activeTab === 'home' ? colors.text : colors.textSubtle}
             />
             <Text
               style={[
@@ -143,13 +146,15 @@ function AppContent() {
           <TouchableOpacity
             style={styles.tabItem}
             onPress={() => setActiveTab('markets')}
+            activeOpacity={0.7}
+            hitSlop={8}
             accessibilityRole="tab"
             accessibilityLabel="Markets tab"
             accessibilityState={{ selected: activeTab === 'markets' }}
           >
             <BarChart3
               size={22}
-              color={activeTab === 'markets' ? '#FFFFFF' : '#6B7280'}
+              color={activeTab === 'markets' ? colors.text : colors.textSubtle}
             />
             <Text
               style={[
@@ -169,13 +174,15 @@ function AppContent() {
                 activeTab === 'trade' && styles.tradeButtonActive,
               ]}
               onPress={() => setActiveTab('trade')}
+              activeOpacity={0.85}
+              hitSlop={10}
               accessibilityRole="tab"
               accessibilityLabel="Trade tab"
               accessibilityState={{ selected: activeTab === 'trade' }}
             >
               <ArrowRightLeft
                 size={26}
-                color="#FFFFFF"
+                color={colors.text}
               />
             </TouchableOpacity>
             <Text
@@ -192,13 +199,15 @@ function AppContent() {
           <TouchableOpacity
             style={styles.tabItem}
             onPress={() => setActiveTab('earn')}
+            activeOpacity={0.7}
+            hitSlop={8}
             accessibilityRole="tab"
             accessibilityLabel="Earn tab"
             accessibilityState={{ selected: activeTab === 'earn' }}
           >
             <TrendingUp
               size={22}
-              color={activeTab === 'earn' ? '#FFFFFF' : '#6B7280'}
+              color={activeTab === 'earn' ? colors.text : colors.textSubtle}
             />
             <Text
               style={[
@@ -213,13 +222,15 @@ function AppContent() {
           <TouchableOpacity
             style={styles.tabItem}
             onPress={() => setActiveTab('wallet')}
+            activeOpacity={0.7}
+            hitSlop={8}
             accessibilityRole="tab"
             accessibilityLabel="Wallet tab"
             accessibilityState={{ selected: activeTab === 'wallet' }}
           >
             <Wallet
               size={22}
-              color={activeTab === 'wallet' ? '#FFFFFF' : '#6B7280'}
+              color={activeTab === 'wallet' ? colors.text : colors.textSubtle}
             />
             <Text
               style={[
@@ -253,38 +264,38 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0A0E17',
+    backgroundColor: colors.bg,
   },
   header: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 12,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: '#1E293B',
+    borderBottomColor: colors.border,
   },
   headerTitle: {
-    color: '#FFFFFF',
-    fontSize: 24,
-    fontWeight: '800',
+    color: colors.text,
+    fontSize: typography.size.xxl,
+    fontWeight: typography.weight.extrabold,
   },
   content: {
     flex: 1,
   },
   tabBarContainer: {
-    backgroundColor: '#141926',
+    backgroundColor: colors.surface,
     borderTopWidth: 1,
-    borderTopColor: '#1E293B',
+    borderTopColor: colors.border,
   },
   tabBar: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    paddingBottom: 8,
-    paddingTop: 8,
+    paddingBottom: spacing.sm,
+    paddingTop: spacing.sm,
   },
   tabItem: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: spacing.sm,
     gap: 4,
   },
   tradeButtonWrapper: {
@@ -296,28 +307,28 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: '#3B82F6',
+    backgroundColor: colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#3B82F6',
+    shadowColor: colors.accent,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 8,
     elevation: 8,
   },
   tradeButtonActive: {
-    backgroundColor: '#2563EB',
+    backgroundColor: colors.accentPressed,
     shadowOpacity: 0.6,
   },
   tradeLabel: {
     marginTop: 4,
   },
   tabLabel: {
-    color: '#6B7280',
-    fontSize: 12,
-    fontWeight: '600',
+    color: colors.textSubtle,
+    fontSize: typography.size.sm,
+    fontWeight: typography.weight.semibold,
   },
   tabLabelActive: {
-    color: '#FFFFFF',
+    color: colors.text,
   },
 });
