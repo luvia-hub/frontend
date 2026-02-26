@@ -59,52 +59,7 @@ function toDisplayPosition(p: UserPosition): Position {
   };
 }
 
-const MOCK_POSITIONS: Position[] = [
-  {
-    id: '1',
-    pair: 'ETH-USD',
-    icon: '⟠',
-    side: 'Long',
-    leverage: 10,
-    pnl: 450.00,
-    pnlPercent: 25.00,
-    entry: 1800.00,
-    mark: 1845.20,
-    liquidation: 1650.00,
-    exchange: 'Hyperliquid',
-    color: '#22C55E',
-  },
-  {
-    id: '2',
-    pair: 'BTC-USD',
-    icon: '₿',
-    side: 'Short',
-    leverage: 20,
-    pnl: -120.00,
-    pnlPercent: -4.20,
-    entry: 65000,
-    mark: 65420,
-    liquidation: 68000,
-    exchange: 'Hyperliquid',
-    color: '#EF4444',
-  },
-  {
-    id: '3',
-    pair: 'SOL-USD',
-    icon: '◎',
-    side: 'Long',
-    leverage: 5,
-    pnl: 85.50,
-    pnlPercent: 12.30,
-    entry: 142.50,
-    mark: 143.10,
-    liquidation: 115.00,
-    exchange: 'dYdX',
-    color: '#22C55E',
-  },
-];
 
-const DAILY_CHANGE_PERCENT = 12.5;
 
 interface FilterChipProps {
   label: string;
@@ -220,25 +175,24 @@ interface ActivePositionsScreenProps {
 }
 
 export default function ActivePositionsScreen({ onBack }: ActivePositionsScreenProps) {
-  const [selectedFilter, setSelectedFilter] = useState<'all' | 'hyperliquid' | 'dydx' | 'aster'>('all');
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'hyperliquid' | 'dydx' | 'gmx' | 'lighter' | 'aster'>('all');
 
   const { address } = useWallet();
 
   // Stable adapter map – only re-created when the component mounts
   const { positions: livePositions, isLoading } = useUserPositions(address, EXCHANGE_ADAPTERS);
 
-  // Use live Aster positions when a wallet is connected; fall back to mock data otherwise
+  // Always show live positions (empty list when no wallet connected)
   const allPositions: Position[] = useMemo(() => {
-    if (address && livePositions.length > 0) {
-      return livePositions.map(toDisplayPosition);
-    }
-    return MOCK_POSITIONS;
-  }, [address, livePositions]);
+    return livePositions.map(toDisplayPosition);
+  }, [livePositions]);
 
   const filteredPositions = allPositions.filter(position => {
     if (selectedFilter === 'all') return true;
     if (selectedFilter === 'hyperliquid') return position.exchange === 'Hyperliquid';
     if (selectedFilter === 'dydx') return position.exchange === 'dYdX';
+    if (selectedFilter === 'gmx') return position.exchange === 'GMX';
+    if (selectedFilter === 'lighter') return position.exchange === 'Lighter';
     if (selectedFilter === 'aster') return position.exchange === 'Aster';
     return true;
   });
@@ -300,9 +254,9 @@ export default function ActivePositionsScreen({ onBack }: ActivePositionsScreenP
           <View style={styles.dailyChange}>
             <Text style={styles.dailyChangeIcon}>{isPnlPositive ? '📈' : '📉'}</Text>
             <Text style={[styles.dailyChangeText, { color: isPnlPositive ? '#22C55E' : '#EF4444' }]}>
-              {isPnlPositive ? '+' : ''}{DAILY_CHANGE_PERCENT}%
+              {allPositions.length} positions
             </Text>
-            <Text style={styles.dailyChangeLabel}>Daily Change</Text>
+            <Text style={styles.dailyChangeLabel}>across all exchanges</Text>
           </View>
         </View>
 
@@ -330,6 +284,18 @@ export default function ActivePositionsScreen({ onBack }: ActivePositionsScreenP
             icon="★"
             isActive={selectedFilter === 'aster'}
             onPress={() => setSelectedFilter('aster')}
+          />
+          <FilterChip
+            label="GMX"
+            icon="◉"
+            isActive={selectedFilter === 'gmx'}
+            onPress={() => setSelectedFilter('gmx')}
+          />
+          <FilterChip
+            label="Lighter"
+            icon="◈"
+            isActive={selectedFilter === 'lighter'}
+            onPress={() => setSelectedFilter('lighter')}
           />
         </View>
 

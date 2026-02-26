@@ -7,6 +7,10 @@
  */
 
 import { fetchAsterPositions } from './aster';
+import { hyperliquidServiceAdapter } from './adapters/hyperliquidAdapter';
+import { dydxServiceAdapter } from './adapters/dydxAdapter';
+import { gmxServiceAdapter } from './adapters/gmxAdapter';
+import { lighterServiceAdapter } from './adapters/lighterAdapter';
 
 // ---------------------------------------------------------------------------
 // Common types
@@ -37,7 +41,7 @@ export interface ExchangeServiceAdapter {
 }
 
 // ---------------------------------------------------------------------------
-// Aster adapter
+// Aster adapter (kept inline for backward compatibility)
 // ---------------------------------------------------------------------------
 
 export const asterServiceAdapter: ExchangeServiceAdapter = {
@@ -61,7 +65,6 @@ export const asterServiceAdapter: ExchangeServiceAdapter = {
           p.positionSide === 'SHORT' || (p.positionSide === 'BOTH' && posAmt < 0)
             ? 'Short'
             : 'Long';
-        // Aster currently lists USDT-quoted perpetuals; strip the quote suffix to get the base asset.
         const baseAsset = p.symbol.replace(/USDT$/, '');
 
         return {
@@ -83,9 +86,45 @@ export const asterServiceAdapter: ExchangeServiceAdapter = {
 };
 
 // ---------------------------------------------------------------------------
-// Registry – add new adapters here to extend the service layer
+// Registry – all 5 exchange adapters
 // ---------------------------------------------------------------------------
 
 export const EXCHANGE_ADAPTERS: Record<string, ExchangeServiceAdapter> = {
+  hyperliquid: hyperliquidServiceAdapter,
+  dydx: dydxServiceAdapter,
+  gmx: gmxServiceAdapter,
+  lighter: lighterServiceAdapter,
   aster: asterServiceAdapter,
 };
+
+// ---------------------------------------------------------------------------
+// Aggregate helper
+// ---------------------------------------------------------------------------
+
+/**
+ * Fetch positions from ALL registered exchanges in parallel.
+ * Returns merged results; individual exchange failures are logged but
+ * do not prevent other exchanges from returning data.
+ */
+export async function fetchAllPositions(address: string): Promise<UserPosition[]> {
+  const adapters = Object.values(EXCHANGE_ADAPTERS);
+
+  const results = await Promise.allSettled(
+    adapters.map((adapter) => adapter.fetchUserPositions(address)),
+  );
+
+  const merged: UserPosition[] = [];
+  results.forEach((result, idx) => {
+    if (result.status === 'fulfilled') {
+      merged.push(...result.value);
+    } else {
+      console.warn(
+        `Failed to fetch positions from ${adapters[idx].exchangeName}:`,
+        result.reason,
+      );
+    }
+  });
+
+  return merged;
+}
+

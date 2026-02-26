@@ -5,131 +5,54 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Image,
+  ActivityIndicator,
 } from 'react-native';
 import { Bell, Settings, ArrowUpDown } from 'lucide-react-native';
+import { usePortfolioData } from '../hooks/usePortfolioData';
+import type { ExchangeSummary } from '../hooks/usePortfolioData';
+import type { UserPosition } from '../services/exchangeService';
 
-interface Exchange {
-  id: string;
-  name: string;
-  icon: string;
-  type: string;
-  balance: number;
-  pnl: number;
-  activePositions: number;
-  status: 'active' | 'idle';
-  color: string;
-}
+// ---------------------------------------------------------------------------
+// Exchange icon map (static, no mock data)
+// ---------------------------------------------------------------------------
 
-interface Position {
-  id: string;
-  pair: string;
-  side: 'Long' | 'Short';
-  leverage: number;
-  pnl: number;
-  exchange: string;
-  color: string;
-}
+const EXCHANGE_ICONS: Record<string, string> = {
+  Hyperliquid: '●',
+  dYdX: '◆',
+  GMX: '◉',
+  Lighter: '◈',
+  Aster: '✦',
+};
 
-const MOCK_EXCHANGES: Exchange[] = [
-  {
-    id: '1',
-    name: 'Hyperliquid',
-    icon: '●',
-    type: 'PERPS',
-    balance: 54000.00,
-    pnl: 1200,
-    activePositions: 3,
-    status: 'active',
-    color: '#60D5F0',
-  },
-  {
-    id: '2',
-    name: 'dYdX v4',
-    icon: '◆',
-    type: 'PERPS',
-    balance: 40592.42,
-    pnl: -200,
-    activePositions: 1,
-    status: 'active',
-    color: '#6366F1',
-  },
-  {
-    id: '3',
-    name: 'GMX',
-    icon: '◉',
-    type: 'SPOT/PERPS',
-    balance: 30000.00,
-    pnl: 0,
-    activePositions: 0,
-    status: 'idle',
-    color: '#A78BFA',
-  },
-];
-
-const MOCK_POSITIONS: Position[] = [
-  {
-    id: '1',
-    pair: 'ETH-USD',
-    side: 'Long',
-    leverage: 5,
-    pnl: 840.20,
-    exchange: 'Hyperliquid',
-    color: '#22C55E',
-  },
-  {
-    id: '2',
-    pair: 'SOL-USD',
-    side: 'Long',
-    leverage: 3,
-    pnl: 360.50,
-    exchange: 'Hyperliquid',
-    color: '#22C55E',
-  },
-  {
-    id: '3',
-    pair: 'BTC-USD',
-    side: 'Short',
-    leverage: 10,
-    pnl: -450.30,
-    exchange: 'dYdX v4',
-    color: '#EF4444',
-  },
-];
-
-const TOTAL_PORTFOLIO_VALUE = 124592.42;
-const PORTFOLIO_CHANGE = 4230.12;
-const PORTFOLIO_CHANGE_PERCENT = 3.2;
-const VOLUME_24H = 1200000;
-const MARGIN_USAGE = 18.5;
+// ---------------------------------------------------------------------------
+// Sub-components
+// ---------------------------------------------------------------------------
 
 interface ExchangeCardProps {
-  exchange: Exchange;
+  exchange: ExchangeSummary;
 }
 
 function ExchangeCard({ exchange }: ExchangeCardProps) {
-  const isProfitable = exchange.pnl >= 0;
+  const isProfitable = exchange.totalPnl >= 0;
   const pnlColor = isProfitable ? '#22C55E' : '#EF4444';
   const isIdle = exchange.status === 'idle';
+  const icon = EXCHANGE_ICONS[exchange.name] ?? '●';
 
   return (
     <View style={styles.exchangeCard}>
       <View style={styles.exchangeHeader}>
         <View style={styles.exchangeIconContainer}>
           <View style={[styles.exchangeIcon, { backgroundColor: exchange.color }]}>
-            <Text style={styles.exchangeIconText}>{exchange.icon}</Text>
+            <Text style={styles.exchangeIconText}>{icon}</Text>
           </View>
         </View>
         <View style={styles.exchangeInfo}>
           <Text style={styles.exchangeName}>{exchange.name}</Text>
-          <Text style={styles.exchangeType}>{exchange.type}</Text>
+          <Text style={styles.exchangeType}>PERPS</Text>
         </View>
         <View style={styles.exchangeBalance}>
-          <Text style={styles.balanceValue}>
-            ${exchange.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-          </Text>
           <Text style={[styles.pnlValue, { color: pnlColor }]}>
-            {isProfitable ? '+' : ''}${Math.abs(exchange.pnl).toLocaleString('en-US')} (PnL)
+            {isProfitable ? '+' : ''}${Math.abs(exchange.totalPnl).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (PnL)
           </Text>
         </View>
       </View>
@@ -155,27 +78,28 @@ function ExchangeCard({ exchange }: ExchangeCardProps) {
 }
 
 interface PositionCardProps {
-  position: Position;
+  position: UserPosition;
 }
 
 function PositionCard({ position }: PositionCardProps) {
-  const isProfitable = position.pnl >= 0;
+  const isProfitable = position.unrealizedPnl >= 0;
   const pnlColor = isProfitable ? '#22C55E' : '#EF4444';
+  const sideColor = position.side === 'Long' ? '#22C55E' : '#EF4444';
 
   return (
-    <View style={[styles.positionCard, { borderLeftColor: position.color }]}>
+    <View style={[styles.positionCard, { borderLeftColor: sideColor }]}>
       <View style={styles.positionHeader}>
         <View style={styles.positionLeft}>
-          <Text style={styles.positionPair}>{position.pair}</Text>
+          <Text style={styles.positionPair}>{position.symbol}</Text>
           <View style={styles.positionBadge}>
-            <Text style={[styles.positionSide, { color: position.color }]}>
+            <Text style={[styles.positionSide, { color: sideColor }]}>
               {position.side} {position.leverage}x
             </Text>
           </View>
         </View>
         <View style={styles.positionRight}>
           <Text style={[styles.positionPnl, { color: pnlColor }]}>
-            {isProfitable ? '+' : ''}${Math.abs(position.pnl).toFixed(2)}
+            {isProfitable ? '+' : ''}${Math.abs(position.unrealizedPnl).toFixed(2)}
           </Text>
         </View>
       </View>
@@ -184,11 +108,21 @@ function PositionCard({ position }: PositionCardProps) {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Main screen
+// ---------------------------------------------------------------------------
+
 interface DashboardScreenProps {
   onViewAllPositions?: () => void;
 }
 
 export default function DashboardScreen({ onViewAllPositions }: DashboardScreenProps) {
+  const { positions, exchanges, totalPnl, isLoading, error, refresh } = usePortfolioData();
+
+  const isProfitable = totalPnl >= 0;
+  const pnlColor = isProfitable ? '#22C55E' : '#EF4444';
+  const topPositions = positions.slice(0, 4); // Show up to 4 on dashboard
+
   return (
     <ScrollView
       style={styles.container}
@@ -205,7 +139,7 @@ export default function DashboardScreen({ onViewAllPositions }: DashboardScreenP
           </View>
           <View style={styles.welcomeText}>
             <Text style={styles.welcomeBack}>WELCOME BACK</Text>
-            <Text style={styles.userName}>Alex Trader</Text>
+            <Text style={styles.userName}>Trader</Text>
           </View>
         </View>
         <View style={styles.headerRight}>
@@ -221,61 +155,72 @@ export default function DashboardScreen({ onViewAllPositions }: DashboardScreenP
       {/* Total Portfolio Value Card */}
       <View style={styles.portfolioCard}>
         <View style={styles.portfolioHeader}>
-          <Text style={styles.portfolioLabel}>Total Portfolio Value</Text>
-          <View style={styles.percentageBadge}>
-            <Text style={styles.percentageText}>📈 {PORTFOLIO_CHANGE_PERCENT}%</Text>
-          </View>
+          <Text style={styles.portfolioLabel}>Unrealized P&L</Text>
+          {!isLoading && (
+            <View style={[styles.percentageBadge, { backgroundColor: isProfitable ? '#22C55E20' : '#EF444420' }]}>
+              <Text style={[styles.percentageText, { color: pnlColor }]}>
+                {isProfitable ? '📈' : '📉'} {positions.length} positions
+              </Text>
+            </View>
+          )}
         </View>
-        <Text style={styles.portfolioValue}>
-          ${TOTAL_PORTFOLIO_VALUE.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-        </Text>
-        <Text style={styles.portfolioChange}>
-          +${PORTFOLIO_CHANGE.toLocaleString('en-US', { minimumFractionDigits: 2 })} (24h)
-        </Text>
-        
-        <View style={styles.metricsRow}>
-          <View style={styles.metricItem}>
-            <Text style={styles.metricLabel}>24h Volume</Text>
-            <Text style={styles.metricValue}>
-              ${(VOLUME_24H / 1000000).toFixed(1)}M
+        {isLoading ? (
+          <ActivityIndicator size="large" color="#3B82F6" style={{ marginVertical: 24 }} />
+        ) : (
+          <>
+            <Text style={[styles.portfolioValue, { color: pnlColor }]}>
+              {isProfitable ? '+' : '-'}${Math.abs(totalPnl).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </Text>
-          </View>
-          <View style={styles.metricDivider} />
-          <View style={styles.metricItem}>
-            <Text style={styles.metricLabel}>Margin Usage</Text>
-            <Text style={styles.metricValue}>{MARGIN_USAGE}%</Text>
-          </View>
-        </View>
+            {error && <Text style={styles.errorText}>{error}</Text>}
+            <View style={styles.metricsRow}>
+              <View style={styles.metricItem}>
+                <Text style={styles.metricLabel}>Exchanges</Text>
+                <Text style={styles.metricValue}>
+                  {exchanges.filter((e) => e.status === 'active').length} active
+                </Text>
+              </View>
+              <View style={styles.metricDivider} />
+              <View style={styles.metricItem}>
+                <Text style={styles.metricLabel}>Positions</Text>
+                <Text style={styles.metricValue}>{positions.length}</Text>
+              </View>
+            </View>
+          </>
+        )}
       </View>
 
       {/* Your Exchanges Section */}
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Your Exchanges</Text>
-        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Manage APIs">
-          <Text style={styles.manageLink}>Manage APIs</Text>
+        <TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Refresh">
+          <Text style={styles.manageLink}>Refresh</Text>
         </TouchableOpacity>
       </View>
 
-      {MOCK_EXCHANGES.map((exchange) => (
+      {exchanges.map((exchange) => (
         <ExchangeCard key={exchange.id} exchange={exchange} />
       ))}
 
       {/* Top Active Positions Section */}
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Top Active Positions</Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           onPress={onViewAllPositions}
-          accessibilityRole="button" 
-          accessibilityLabel={`View All ${MOCK_POSITIONS.length} Positions`}
+          accessibilityRole="button"
+          accessibilityLabel={`View All ${positions.length} Positions`}
         >
-          <Text style={styles.viewAllLink}>View All ({MOCK_POSITIONS.length})</Text>
+          <Text style={styles.viewAllLink}>View All ({positions.length})</Text>
         </TouchableOpacity>
       </View>
 
       <View style={styles.positionsContainer}>
-        {MOCK_POSITIONS.map((position) => (
-          <PositionCard key={position.id} position={position} />
-        ))}
+        {topPositions.length === 0 && !isLoading ? (
+          <Text style={styles.emptyText}>No open positions. Connect a wallet to get started.</Text>
+        ) : (
+          topPositions.map((position) => (
+            <PositionCard key={position.id} position={position} />
+          ))
+        )}
       </View>
 
       {/* Bottom Navigation Arrow Button */}
@@ -611,5 +556,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#3B82F6',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  errorText: {
+    color: '#F59E0B',
+    fontSize: 13,
+    fontWeight: '500',
+    marginBottom: 12,
+  },
+  emptyText: {
+    color: '#9CA3AF',
+    fontSize: 14,
+    fontWeight: '500',
+    textAlign: 'center',
+    paddingVertical: 24,
   },
 });
