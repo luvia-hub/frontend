@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, Alert, ActivityIndicator } from 'react-native';
 import { X } from 'lucide-react-native';
-import { BID_ASK_SPREAD, OrderType } from './types';
+import { BID_ASK_SPREAD, OrderType, ExchangeType } from './types';
 import { useWallet } from '../../contexts/WalletContext';
-import { placeOrder, OrderRequest } from '../../services/hyperliquid';
+import { routeOrder } from '../../services/orderRouter';
+import type { UnifiedOrderRequest } from '../../services/orderRouter';
 import { colors, radius, spacing, typography } from '../../theme';
 
 interface ActionButtonsProps {
@@ -13,9 +14,11 @@ interface ActionButtonsProps {
     price?: string;
     leverage: number;
     selectedPair: string;
+    /** Target exchange for order routing (defaults to hyperliquid) */
+    exchange?: ExchangeType;
 }
 
-function ActionButtons({ markPrice, orderType, size, price, leverage, selectedPair }: ActionButtonsProps) {
+function ActionButtons({ markPrice, orderType, size, price, leverage, selectedPair, exchange = 'hyperliquid' }: ActionButtonsProps) {
     const [showConfirmation, setShowConfirmation] = useState(false);
     const [orderSide, setOrderSide] = useState<'buy' | 'sell'>('buy');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -41,36 +44,8 @@ function ActionButtons({ markPrice, orderType, size, price, leverage, selectedPa
         setShowConfirmation(true);
     };
 
-    const checkOrderResponse = (response: any): { success: boolean; message: string } => {
-        if (!response) {
-            return { success: false, message: 'No response from server' };
-        }
-
-        if (response.status === 'ok') {
-            return { success: true, message: 'Order placed successfully!' };
-        }
-
-        if (response.response?.data?.statuses) {
-            const firstStatus = response.response.data.statuses[0];
-            if ('error' in firstStatus && firstStatus.error) {
-                return { success: false, message: firstStatus.error };
-            }
-            if ('filled' in firstStatus || 'resting' in firstStatus) {
-                return { success: true, message: 'Order placed successfully!' };
-            }
-        }
-
-        return { success: false, message: 'Failed to place order' };
-    };
-
     /**
      * Determine the tpsl value for stop orders
-     * For Hyperliquid:
-     * - 'sl' (stop loss) = triggers when price goes BELOW triggerPx
-     * - 'tp' (take profit) = triggers when price goes ABOVE triggerPx
-     * 
-     * For a BUY order (going long), we typically want stop loss below entry (sell to exit)
-     * For a SELL order (going short), we typically want take profit above entry (buy to exit)
      */
     const getTpslForStopOrder = (side: 'buy' | 'sell'): 'tp' | 'sl' => {
         return side === 'buy' ? 'sl' : 'tp';
@@ -92,37 +67,25 @@ function ActionButtons({ markPrice, orderType, size, price, leverage, selectedPa
                 orderPrice = parseFloat(price || '0');
             }
 
-            const orderRequest: OrderRequest = {
+            const orderRequest: UnifiedOrderRequest = {
+                exchange,
                 asset: selectedPair,
-                isBuy: orderSide === 'buy',
-                limitPx: orderPrice,
-                sz: orderSize,
+                side: orderSide,
+                size: orderSize,
+                price: orderPrice,
+                type: orderType,
+                leverage,
                 reduceOnly: false,
-                orderType: {},
+                tpsl: orderType === 'stop' ? getTpslForStopOrder(orderSide) : undefined,
             };
 
-            if (orderType === 'limit') {
-                orderRequest.orderType.limit = { tif: 'Gtc' };
-            } else if (orderType === 'stop') {
-                orderRequest.orderType.trigger = {
-                    triggerPx: orderPrice,
-                    isMarket: false,
-                    tpsl: getTpslForStopOrder(orderSide),
-                };
-            } else {
-                // Market order - use limit with IoC
-                orderRequest.orderType.limit = { tif: 'Ioc' };
-            }
+            const result = await routeOrder(wallet.signer, orderRequest);
 
-            const response = await placeOrder(wallet.signer, orderRequest);
-
-            const { success, message } = checkOrderResponse(response);
-            
-            if (success) {
-                Alert.alert('Success', message);
+            if (result.success) {
+                Alert.alert('Success', result.message);
                 setShowConfirmation(false);
             } else {
-                Alert.alert('Error', message);
+                Alert.alert('Error', result.message);
             }
         } catch (error) {
             console.error('Order placement error:', error);
@@ -132,14 +95,14 @@ function ActionButtons({ markPrice, orderType, size, price, leverage, selectedPa
         }
     };
 
-    const orderPriceDisplay = orderType === 'market' 
-        ? markPrice.toFixed(1) 
+    const orderPriceDisplay = orderType === 'market'
+        ? markPrice.toFixed(1)
         : (price && parseFloat(price) > 0 ? parseFloat(price).toFixed(1) : markPrice.toFixed(1));
 
     return (
         <>
             <View style={styles.actionButtons}>
-                <TouchableOpacity 
+                <TouchableOpacity
                     style={styles.buyButton}
                     onPress={() => handleOrderPress('buy')}
                     disabled={isSubmitting}
@@ -149,7 +112,7 @@ function ActionButtons({ markPrice, orderType, size, price, leverage, selectedPa
                     <Text style={styles.buyButtonText}>Long / Buy</Text>
                     <Text style={styles.buttonPrice}>{orderPriceDisplay}</Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
+                <TouchableOpacity
                     style={styles.sellButton}
                     onPress={() => handleOrderPress('sell')}
                     disabled={isSubmitting}

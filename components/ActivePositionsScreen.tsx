@@ -6,12 +6,15 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { ArrowLeft, Menu, Share2, X } from 'lucide-react-native';
 import { useWallet } from '../contexts/WalletContext';
 import { useUserPositions } from './trading/useUserPositions';
 import { EXCHANGE_ADAPTERS } from '../services/exchangeService';
+import { closePosition } from '../services/orderRouter';
 import type { UserPosition } from '../services/exchangeService';
+import type { ExchangeType } from './trading/types';
 
 /** Map from baseAsset ticker to a display icon */
 const ASSET_ICONS: Record<string, string> = {
@@ -32,6 +35,7 @@ interface Position {
   icon: string;
   side: 'Long' | 'Short';
   leverage: number;
+  size: number;
   pnl: number;
   pnlPercent: number;
   entry: number;
@@ -49,6 +53,7 @@ function toDisplayPosition(p: UserPosition): Position {
     icon: getAssetIcon(p.baseAsset),
     side: p.side,
     leverage: p.leverage,
+    size: p.size,
     pnl: p.unrealizedPnl,
     pnlPercent: p.unrealizedPnlPercent,
     entry: p.entryPrice,
@@ -177,7 +182,7 @@ interface ActivePositionsScreenProps {
 export default function ActivePositionsScreen({ onBack }: ActivePositionsScreenProps) {
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'hyperliquid' | 'dydx' | 'gmx' | 'lighter' | 'aster'>('all');
 
-  const { address } = useWallet();
+  const { address, signer } = useWallet();
 
   // Stable adapter map – only re-created when the component mounts
   const { positions: livePositions, isLoading } = useUserPositions(address, EXCHANGE_ADAPTERS);
@@ -200,12 +205,60 @@ export default function ActivePositionsScreen({ onBack }: ActivePositionsScreenP
   const totalUnrealizedPnl = allPositions.reduce((sum, p) => sum + p.pnl, 0);
   const isPnlPositive = totalUnrealizedPnl >= 0;
 
-  const handleClosePosition = (_id: string) => {
-    // Handle close position
+  const handleClosePosition = (id: string) => {
+    const pos = allPositions.find((p) => p.id === id);
+    if (!pos) return;
+
+    if (!signer) {
+      Alert.alert('Wallet Not Connected', 'Please connect your wallet to close positions.');
+      return;
+    }
+
+    // Map display exchange name to ExchangeType key
+    const exchangeMap: Record<string, ExchangeType> = {
+      Hyperliquid: 'hyperliquid',
+      dYdX: 'dydx',
+      GMX: 'gmx',
+      Lighter: 'lighter',
+      Aster: 'aster',
+    };
+    const exchangeKey = exchangeMap[pos.exchange] ?? 'hyperliquid';
+
+    Alert.alert(
+      'Close Position',
+      `Close ${pos.side} ${pos.pair} (${pos.leverage}x) at market price?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Close',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const result = await closePosition(
+                signer,
+                exchangeKey,
+                pos.pair.replace(/-USD$/, ''),
+                pos.side,
+                pos.size,
+                pos.mark,
+              );
+
+              if (result.success) {
+                Alert.alert('Success', 'Position closed successfully.');
+              } else {
+                Alert.alert('Error', result.message);
+              }
+            } catch (error) {
+              Alert.alert('Error', error instanceof Error ? error.message : 'Failed to close position.');
+            }
+          },
+        },
+      ],
+    );
   };
 
   const handleSharePosition = (_id: string) => {
-    // Handle share position
+    Alert.alert('Share', 'Position sharing coming soon!');
   };
 
   return (
