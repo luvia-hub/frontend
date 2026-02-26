@@ -5,12 +5,12 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  ActivityIndicator,
 } from 'react-native';
 import { Bell, Settings, ArrowUpDown } from 'lucide-react-native';
 import { usePortfolioData } from '../hooks/usePortfolioData';
 import type { ExchangeSummary } from '../hooks/usePortfolioData';
 import type { UserPosition } from '../services/exchangeService';
+import Skeleton, { CardSkeleton } from './ui/Skeleton';
 
 // ---------------------------------------------------------------------------
 // Exchange icon map (static, no mock data)
@@ -165,7 +165,10 @@ export default function DashboardScreen({ onViewAllPositions }: DashboardScreenP
           )}
         </View>
         {isLoading ? (
-          <ActivityIndicator size="large" color="#3B82F6" style={{ marginVertical: 24 }} />
+          <View style={{ gap: 12, paddingVertical: 12 }}>
+            <Skeleton width={180} height={32} borderRadius={6} />
+            <Skeleton width={120} height={16} borderRadius={4} />
+          </View>
         ) : (
           <>
             <Text style={[styles.portfolioValue, { color: pnlColor }]}>
