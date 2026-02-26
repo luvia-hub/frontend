@@ -43,6 +43,15 @@ jobs:
       - name: Prebuild Expo project
         run: npx expo prebuild --platform android --clean
 
+      - name: Add local maven repo for Async Storage
+        run: |
+          echo "
+          allprojects {
+              repositories {
+                  maven { url \"\$rootDir/../node_modules/@react-native-async-storage/async-storage/android/local_repo\" }
+              }
+          }" >> android/build.gradle
+
       - name: Build Android APK
         run: |
           cd android
