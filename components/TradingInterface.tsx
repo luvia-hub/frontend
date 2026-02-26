@@ -287,8 +287,8 @@ export default function TradingInterface({ selectedMarket, availableExchanges, o
               />
               ) : (
                 <DepthTradeChart
-                  bids={displayedBids}
-                  asks={displayedAsks}
+                  bids={orderBook?.bids ?? []}
+                  asks={orderBook?.asks ?? []}
                   trades={recentTrades}
                   connectionState={connectionState}
                 />
