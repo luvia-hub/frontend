@@ -14,6 +14,7 @@ import MarketListScreen from './components/MarketListScreen';
 import ActivePositionsScreen from './components/ActivePositionsScreen';
 import WalletConnectScreen from './components/WalletConnectScreen';
 import { WalletProvider } from './contexts/WalletContext';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { useAppNavigationStore, type AppNavigationState } from './stores/useAppNavigationStore';
 import type { ExchangeType } from './components/trading';
 
@@ -254,7 +255,9 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <WalletProvider>
         <SafeAreaProvider>
-          <AppContent />
+          <ErrorBoundary>
+            <AppContent />
+          </ErrorBoundary>
         </SafeAreaProvider>
       </WalletProvider>
     </QueryClientProvider>

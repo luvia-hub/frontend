@@ -2,7 +2,9 @@
  * Aster API service for fetching perpetual market data
  */
 
-const ASTER_API_URL = 'https://fapi.asterdex.com';
+import { ENV } from '../config/env';
+
+const ASTER_API_URL = ENV.ASTER_API_URL;
 
 export interface AsterMarket {
   symbol: string;
@@ -74,9 +76,9 @@ export async function fetchAsterMarkets(): Promise<AsterMarket[]> {
     const fundingBySymbol = new Map(
       Array.isArray(fundingData)
         ? fundingData.map((item: { symbol: string; lastFundingRate?: string }) => [
-            item.symbol,
-            item.lastFundingRate ?? '0',
-          ])
+          item.symbol,
+          item.lastFundingRate ?? '0',
+        ])
         : [],
     );
 

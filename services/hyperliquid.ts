@@ -1,7 +1,8 @@
 import { WalletClient, HttpTransport, OrderParameters, WalletClientParameters } from '@far1s/hyperliquid';
 import { ethers } from 'ethers';
+import { ENV } from '../config/env';
 
-const HYPERLIQUID_API_URL = 'https://api.hyperliquid.xyz';
+const HYPERLIQUID_API_URL = ENV.HYPERLIQUID_API_URL;
 
 export interface OrderRequest {
   asset: string;
@@ -79,14 +80,14 @@ export async function placeOrder(
           t: order.orderType.limit
             ? { limit: { tif: order.orderType.limit.tif } }
             : order.orderType.trigger
-            ? {
+              ? {
                 trigger: {
                   isMarket: order.orderType.trigger.isMarket,
                   triggerPx: floatToWire(order.orderType.trigger.triggerPx),
                   tpsl: order.orderType.trigger.tpsl,
                 },
               }
-            : { limit: { tif: 'Gtc' } }, // fallback
+              : { limit: { tif: 'Gtc' } }, // fallback
         },
       ],
       grouping: 'na',

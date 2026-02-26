@@ -27,6 +27,16 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "WEB3AUTH_CLIENT_ID": "BD00_OhngtMzb71CbUluoPrx_-fjrfJGoXt18jGmcLmf4Thr9XGOy095otxTbASLuu2BcfUVg2Oy-8kwVsr-WCc",
+      "WEB3AUTH_NETWORK": "sapphire_devnet",
+      "HYPERLIQUID_API_URL": "https://api.hyperliquid.xyz",
+      "ASTER_API_URL": "https://fapi.asterdex.com",
+      "DYDX_API_URL": "https://indexer.dydx.trade",
+      "GMX_API_URL": "https://arbitrum-api.gmxinfra.io",
+      "LIGHTER_API_URL": "https://api.lighter.xyz",
+      "ETH_RPC_URL": "https://ethereum-rpc.publicnode.com"
     }
   }
 }

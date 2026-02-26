@@ -1,10 +1,11 @@
 import { WEB3AUTH_NETWORK } from '@web3auth/react-native-sdk';
+import { ENV } from './env';
 
-// Web3Auth configuration
-// TODO: Move to environment variables in production
-// For now using a demo client ID for development
-export const WEB3AUTH_CLIENT_ID = 'BD00_OhngtMzb71CbUluoPrx_-fjrfJGoXt18jGmcLmf4Thr9XGOy095otxTbASLuu2BcfUVg2Oy-8kwVsr-WCc';
-export const WEB3AUTH_NETWORK_TYPE = WEB3AUTH_NETWORK.SAPPHIRE_DEVNET;
+// Web3Auth configuration — values sourced from config/env.ts
+export const WEB3AUTH_CLIENT_ID = ENV.WEB3AUTH_CLIENT_ID;
+export const WEB3AUTH_NETWORK_TYPE = ENV.WEB3AUTH_NETWORK === 'sapphire_mainnet'
+  ? WEB3AUTH_NETWORK.SAPPHIRE_MAINNET
+  : WEB3AUTH_NETWORK.SAPPHIRE_DEVNET;
 
 export const WEB3AUTH_REDIRECT_URL = 'cryptotradingaggregator://auth';
 
