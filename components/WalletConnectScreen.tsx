@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     color: '#9CA3AF',
-    fontSize: 16,
+    fontSize: 12,
   },
   connectedContainer: {
     flex: 1,
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
   },
   connectedText: {
     color: '#22C55E',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '700',
   },
   userInfoContainer: {
@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
   },
   userInfoText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: '600',
   },
   addressContainer: {
@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
   },
   addressText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: '600',
     fontFamily: 'monospace',
   },
@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
   },
   disconnectButtonText: {
     color: '#EF4444',
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: '700',
   },
   infoCard: {
@@ -351,13 +351,13 @@ const styles = StyleSheet.create({
   },
   infoTitle: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: '700',
     marginBottom: 8,
   },
   infoText: {
     color: '#9CA3AF',
-    fontSize: 14,
+    fontSize: 12,
     lineHeight: 20,
   },
   connectContainer: {
@@ -369,19 +369,19 @@ const styles = StyleSheet.create({
   },
   title: {
     color: '#FFFFFF',
-    fontSize: 36,
+    fontSize: 32,
     fontWeight: '800',
     marginBottom: 12,
     letterSpacing: -1,
   },
   subtitle: {
     color: '#9CA3AF',
-    fontSize: 16,
+    fontSize: 12,
     lineHeight: 24,
   },
   sectionTitle: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: '700',
     marginBottom: 16,
   },
@@ -415,11 +415,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   providerEmoji: {
-    fontSize: 20,
+    fontSize: 16,
   },
   providerButtonText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: '600',
     flex: 1,
   },
@@ -435,7 +435,7 @@ const styles = StyleSheet.create({
   },
   dividerText: {
     color: '#6B7280',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
   },
   legacyButton: {
@@ -448,7 +448,7 @@ const styles = StyleSheet.create({
   },
   legacyButtonText: {
     color: '#9CA3AF',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
   },
   backButton: {
@@ -457,7 +457,7 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     color: '#3B82F6',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
   },
   featureCard: {
@@ -469,13 +469,13 @@ const styles = StyleSheet.create({
   },
   featureTitle: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: '700',
     marginBottom: 8,
   },
   featureText: {
     color: '#9CA3AF',
-    fontSize: 13,
+    fontSize: 12,
     lineHeight: 20,
   },
   inputContainer: {
@@ -483,7 +483,7 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
   },
   input: {
@@ -494,7 +494,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 12,
     fontFamily: 'monospace',
   },
   inputHint: {
@@ -516,7 +516,7 @@ const styles = StyleSheet.create({
   },
   connectButtonText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: '700',
   },
   warningCard: {
@@ -528,13 +528,13 @@ const styles = StyleSheet.create({
   },
   warningTitle: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '700',
     marginBottom: 8,
   },
   warningText: {
     color: '#9CA3AF',
-    fontSize: 13,
+    fontSize: 12,
     lineHeight: 18,
   },
 });

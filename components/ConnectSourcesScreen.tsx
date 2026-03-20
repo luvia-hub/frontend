@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: '700',
   },
   scrollView: {
@@ -248,14 +248,14 @@ const styles = StyleSheet.create({
   },
   mainTitle: {
     color: '#FFFFFF',
-    fontSize: 36,
+    fontSize: 32,
     fontWeight: '800',
     letterSpacing: -1,
     marginBottom: 12,
   },
   subtitle: {
     color: '#9CA3AF',
-    fontSize: 16,
+    fontSize: 12,
     lineHeight: 24,
     fontWeight: '400',
   },
@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
   },
   scanButtonText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: '700',
   },
   section: {
@@ -314,13 +314,13 @@ const styles = StyleSheet.create({
   },
   sourceName: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: '700',
     marginBottom: 2,
   },
   sourceDescription: {
     color: '#6B7280',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '400',
   },
   sourceRight: {
@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
   },
   connectedText: {
     color: '#22C55E',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
   },
   dydxIcon: {
@@ -358,7 +358,7 @@ const styles = StyleSheet.create({
   },
   gmxIconText: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '700',
   },
   lighterIconContainer: {
@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
   },
   lighterIconText: {
     color: '#FFFFFF',
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: '700',
   },
   asterIconContainer: {
@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
   },
   asterIconText: {
     color: '#FFFFFF',
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: '700',
   },
   manualImportButton: {
@@ -396,7 +396,7 @@ const styles = StyleSheet.create({
   },
   manualImportText: {
     color: '#3B82F6',
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: '700',
   },
 });

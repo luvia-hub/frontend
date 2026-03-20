@@ -648,7 +648,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   userAvatarText: {
-    fontSize: 24,
+    fontSize: 20,
   },
   onlineIndicator: {
     position: 'absolute',
@@ -666,12 +666,12 @@ const styles = StyleSheet.create({
   },
   portfolioLabel: {
     color: '#9CA3AF',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '500',
   },
   portfolioValue: {
     color: '#FFFFFF',
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: '700',
     letterSpacing: -0.5,
   },
@@ -688,7 +688,7 @@ const styles = StyleSheet.create({
   },
   walletText: {
     color: '#3B82F6',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
   },
   aggregatedSection: {
@@ -703,7 +703,7 @@ const styles = StyleSheet.create({
   },
   aggregatedTitle: {
     color: '#FFFFFF',
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '800',
     lineHeight: 32,
   },
@@ -722,7 +722,7 @@ const styles = StyleSheet.create({
   },
   volumeValue: {
     color: '#22C55E',
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: '700',
   },
   timeframeBadge: {
@@ -756,7 +756,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 12,
     paddingVertical: 12,
   },
   filterButton: {
@@ -796,7 +796,7 @@ const styles = StyleSheet.create({
   },
   filterTabText: {
     color: '#9CA3AF',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
   },
   filterTabTextActive: {
@@ -871,7 +871,7 @@ const styles = StyleSheet.create({
   },
   symbolText: {
     color: '#FFFFFF',
-    fontSize: 15,
+    fontSize: 12,
     fontWeight: '700',
   },
   volatileBadge: {
@@ -911,7 +911,7 @@ const styles = StyleSheet.create({
   },
   priceText: {
     color: '#FFFFFF',
-    fontSize: 15,
+    fontSize: 12,
     fontWeight: '700',
     marginBottom: 2,
   },

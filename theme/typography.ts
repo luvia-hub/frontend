@@ -1,11 +1,11 @@
 export const typography = {
   size: {
-    xs: 11,
-    sm: 12,
-    md: 14,
-    lg: 16,
-    xl: 20,
-    xxl: 24,
+    xs: 10,
+    sm: 10,
+    md: 12,
+    lg: 12,
+    xl: 16,
+    xxl: 20,
   },
   weight: {
     regular: '400',

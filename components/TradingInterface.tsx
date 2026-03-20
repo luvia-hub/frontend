@@ -382,7 +382,7 @@ const styles = StyleSheet.create({
   },
   pairHeaderText: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: '700',
   },
   chartPanel: {
@@ -422,7 +422,7 @@ const styles = StyleSheet.create({
   },
   tabContentText: {
     color: '#6B7280',
-    fontSize: 14,
+    fontSize: 12,
   },
   floatingButtonContainer: {
     position: 'absolute',
@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
   },
   tradeButtonText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: '700',
   },
 });

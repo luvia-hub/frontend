@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   avatarEmoji: {
-    fontSize: 28,
+    fontSize: 24,
   },
   welcomeText: {
     gap: 2,
@@ -281,7 +281,7 @@ const styles = StyleSheet.create({
   },
   userName: {
     color: '#FFFFFF',
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: '700',
   },
   headerRight: {
@@ -312,7 +312,7 @@ const styles = StyleSheet.create({
   },
   portfolioLabel: {
     color: '#9CA3AF',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '500',
   },
   percentageBadge: {
@@ -328,14 +328,14 @@ const styles = StyleSheet.create({
   },
   portfolioValue: {
     color: '#FFFFFF',
-    fontSize: 40,
+    fontSize: 36,
     fontWeight: '700',
     letterSpacing: -1,
     marginBottom: 8,
   },
   portfolioChange: {
     color: '#22C55E',
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: '600',
     marginBottom: 20,
   },
@@ -356,13 +356,13 @@ const styles = StyleSheet.create({
   },
   metricLabel: {
     color: '#6B7280',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '500',
     marginBottom: 4,
   },
   metricValue: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: '700',
   },
   sectionHeader: {
@@ -373,17 +373,17 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     color: '#FFFFFF',
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: '700',
   },
   manageLink: {
     color: '#3B82F6',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
   },
   viewAllLink: {
     color: '#9CA3AF',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
   },
   exchangeCard: {
@@ -412,14 +412,14 @@ const styles = StyleSheet.create({
   },
   exchangeIconText: {
     color: '#FFFFFF',
-    fontSize: 20,
+    fontSize: 16,
   },
   exchangeInfo: {
     flex: 1,
   },
   exchangeName: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: '700',
     marginBottom: 2,
   },
@@ -433,7 +433,7 @@ const styles = StyleSheet.create({
   },
   balanceValue: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: '700',
     marginBottom: 2,
   },
@@ -459,7 +459,7 @@ const styles = StyleSheet.create({
   },
   activeText: {
     color: '#FFFFFF',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
   },
   idleStatus: {
@@ -475,7 +475,7 @@ const styles = StyleSheet.create({
   },
   idleText: {
     color: '#9CA3AF',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
   },
   tradeButton: {
@@ -486,7 +486,7 @@ const styles = StyleSheet.create({
   },
   tradeButtonText: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '700',
   },
   progressBar: {
@@ -524,7 +524,7 @@ const styles = StyleSheet.create({
   },
   positionPair: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '700',
     marginBottom: 4,
   },
@@ -539,7 +539,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   positionPnl: {
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: '700',
   },
   positionExchange: {
@@ -562,13 +562,13 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: '#F59E0B',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '500',
     marginBottom: 12,
   },
   emptyText: {
     color: '#9CA3AF',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '500',
     textAlign: 'center',
     paddingVertical: 24,
