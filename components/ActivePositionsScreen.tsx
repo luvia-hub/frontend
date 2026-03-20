@@ -394,7 +394,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: '700',
   },
   content: {
@@ -444,7 +444,7 @@ const styles = StyleSheet.create({
   },
   pnlCardValue: {
     color: '#FFFFFF',
-    fontSize: 48,
+    fontSize: 44,
     fontWeight: '700',
     letterSpacing: -2,
     marginBottom: 12,
@@ -455,16 +455,16 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   dailyChangeIcon: {
-    fontSize: 14,
+    fontSize: 12,
   },
   dailyChangeText: {
     color: '#22C55E',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '700',
   },
   dailyChangeLabel: {
     color: '#9CA3AF',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '500',
   },
   filters: {
@@ -493,7 +493,7 @@ const styles = StyleSheet.create({
   },
   filterLabel: {
     color: '#9CA3AF',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
   },
   filterLabelActive: {
@@ -537,7 +537,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     textAlign: 'center',
     lineHeight: 48,
-    fontSize: 24,
+    fontSize: 20,
     color: '#FFFFFF',
   },
   exchangeIndicator: {
@@ -563,12 +563,12 @@ const styles = StyleSheet.create({
   },
   pairName: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: '700',
   },
   pairType: {
     color: '#9CA3AF',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '500',
   },
   positionHeaderRight: {
@@ -585,11 +585,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   positionPnl: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '700',
   },
   positionPnlPercent: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
   },
   priceDetails: {
@@ -612,7 +612,7 @@ const styles = StyleSheet.create({
   },
   priceValue: {
     color: '#FFFFFF',
-    fontSize: 15,
+    fontSize: 12,
     fontWeight: '700',
   },
   liquidationPrice: {
@@ -642,7 +642,7 @@ const styles = StyleSheet.create({
   },
   closeButtonText: {
     color: '#FFFFFF',
-    fontSize: 15,
+    fontSize: 12,
     fontWeight: '600',
   },
 });

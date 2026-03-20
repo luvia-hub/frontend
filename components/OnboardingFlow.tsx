@@ -160,18 +160,18 @@ const styles = StyleSheet.create({
         marginBottom: 40,
     },
     emoji: {
-        fontSize: 56,
+        fontSize: 52,
     },
     title: {
         color: '#FFFFFF',
-        fontSize: 28,
+        fontSize: 24,
         fontWeight: '800',
         textAlign: 'center',
         marginBottom: 16,
     },
     description: {
         color: '#9CA3AF',
-        fontSize: 16,
+        fontSize: 12,
         fontWeight: '500',
         textAlign: 'center',
         lineHeight: 24,
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
     },
     skipText: {
         color: '#6B7280',
-        fontSize: 16,
+        fontSize: 12,
         fontWeight: '600',
     },
     nextButton: {
@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
     },
     nextText: {
         color: '#FFFFFF',
-        fontSize: 16,
+        fontSize: 12,
         fontWeight: '700',
     },
 });

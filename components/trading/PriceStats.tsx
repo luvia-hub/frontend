@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
     },
     statValue: {
         color: '#FFFFFF',
-        fontSize: 14,
+        fontSize: 12,
         fontWeight: '700',
     },
 });

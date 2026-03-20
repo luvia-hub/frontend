@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
     },
     headerTitle: {
         color: '#FFFFFF',
-        fontSize: 18,
+        fontSize: 14,
         fontWeight: '700',
     },
     tabBar: {
@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
     },
     tabText: {
         color: '#9CA3AF',
-        fontSize: 14,
+        fontSize: 12,
         fontWeight: '600',
     },
     tabTextActive: {
@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
     },
     rowAsset: {
         color: '#FFFFFF',
-        fontSize: 15,
+        fontSize: 12,
         fontWeight: '700',
     },
     sideBadge: {
@@ -316,12 +316,12 @@ const styles = StyleSheet.create({
     },
     rowSize: {
         color: '#FFFFFF',
-        fontSize: 14,
+        fontSize: 12,
         fontWeight: '700',
     },
     rowPrice: {
         color: '#FFFFFF',
-        fontSize: 13,
+        fontSize: 12,
         fontWeight: '600',
     },
     rowFee: {
@@ -346,12 +346,12 @@ const styles = StyleSheet.create({
     },
     loadingText: {
         color: '#9CA3AF',
-        fontSize: 14,
+        fontSize: 12,
         fontWeight: '500',
     },
     errorText: {
         color: '#EF4444',
-        fontSize: 14,
+        fontSize: 12,
         fontWeight: '600',
         textAlign: 'center',
     },
@@ -363,20 +363,20 @@ const styles = StyleSheet.create({
     },
     retryText: {
         color: '#FFFFFF',
-        fontSize: 14,
+        fontSize: 12,
         fontWeight: '700',
     },
     emptyIcon: {
-        fontSize: 48,
+        fontSize: 44,
     },
     emptyTitle: {
         color: '#FFFFFF',
-        fontSize: 18,
+        fontSize: 14,
         fontWeight: '700',
     },
     emptySubtext: {
         color: '#9CA3AF',
-        fontSize: 14,
+        fontSize: 12,
         fontWeight: '500',
         textAlign: 'center',
     },

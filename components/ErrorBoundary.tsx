@@ -73,19 +73,19 @@ const styles = StyleSheet.create({
         padding: 32,
     },
     emoji: {
-        fontSize: 48,
+        fontSize: 44,
         marginBottom: 16,
     },
     title: {
         color: '#FFFFFF',
-        fontSize: 22,
+        fontSize: 18,
         fontWeight: '700',
         marginBottom: 12,
         textAlign: 'center',
     },
     message: {
         color: '#9CA3AF',
-        fontSize: 14,
+        fontSize: 12,
         lineHeight: 20,
         textAlign: 'center',
         marginBottom: 32,
@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
     },
     retryText: {
         color: '#FFFFFF',
-        fontSize: 16,
+        fontSize: 12,
         fontWeight: '700',
     },
 });

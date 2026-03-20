@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
         borderBottomColor: '#1E293B',
     },
     headerTitle: {
-        fontSize: 18,
+        fontSize: 14,
         fontWeight: '700',
         color: '#FFFFFF',
     },
@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
     },
     availableValue: {
         color: '#FFFFFF',
-        fontSize: 13,
+        fontSize: 12,
         fontWeight: '700',
     },
 });

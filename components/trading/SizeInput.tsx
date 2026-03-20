@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
     },
     sizeLabel: {
         color: '#FFFFFF',
-        fontSize: 14,
+        fontSize: 12,
         fontWeight: '600',
         marginBottom: 8,
     },
@@ -65,12 +65,12 @@ const styles = StyleSheet.create({
     sizeInput: {
         flex: 1,
         color: '#FFFFFF',
-        fontSize: 24,
+        fontSize: 20,
         fontWeight: '700',
     },
     sizeCurrency: {
         color: '#6B7280',
-        fontSize: 14,
+        fontSize: 12,
         fontWeight: '600',
         marginRight: 12,
     },

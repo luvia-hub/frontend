@@ -184,12 +184,12 @@ const styles = StyleSheet.create({
   },
   equityLabel: {
     color: '#9CA3AF',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '500',
   },
   equityValue: {
     color: '#FFFFFF',
-    fontSize: 36,
+    fontSize: 32,
     fontWeight: '700',
     letterSpacing: -1,
     marginBottom: 8,
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
   },
   equityChangeText: {
     color: '#22C55E',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
   },
   sectionHeader: {
@@ -212,12 +212,12 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: '700',
   },
   positionCount: {
     color: '#9CA3AF',
-    fontSize: 14,
+    fontSize: 12,
     backgroundColor: '#1E293B',
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
   },
   pairText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: '700',
   },
   exchangeBadge: {
@@ -266,12 +266,12 @@ const styles = StyleSheet.create({
   },
   sideText: {
     color: '#9CA3AF',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '500',
   },
   leverageText: {
     color: '#FBBF24',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
   },
   positionRight: {
@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   pnlText: {
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: '700',
   },
   exitButton: {
@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
   },
   exitText: {
     color: '#EF4444',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
   },
   connectButton: {
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
   },
   connectButtonText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: '700',
   },
 });

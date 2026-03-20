@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
     },
     leveragePresetText: {
         color: '#6B7280',
-        fontSize: 13,
+        fontSize: 12,
         fontWeight: '700',
     },
     leveragePresetTextActive: {
