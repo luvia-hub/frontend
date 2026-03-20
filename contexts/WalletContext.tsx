@@ -113,10 +113,10 @@ export interface WalletState {
   userInfo: Web3AuthUserInfo | null;
 }
 
-type LoginProvider = 'google' | 'apple' | 'email_passwordless' | 'privatekey';
+type LoginProvider = 'google' | 'apple' | 'email_passwordless' | 'privatekey' | 'mnemonic';
 
 interface WalletContextValue extends WalletState {
-  connect: (provider: LoginProvider, privateKey?: string) => Promise<void>;
+  connect: (provider: LoginProvider, secret?: string) => Promise<void>;
   disconnect: () => void;
   signTypedData: (domain: ethers.TypedDataDomain, types: Record<string, ethers.TypedDataField[]>, value: Record<string, any>) => Promise<string>;
   isInitialized: boolean;
@@ -190,11 +190,25 @@ export function WalletProvider({ children }: WalletProviderProps) {
     init();
   }, []);
 
-  const connect = useCallback(async (provider: LoginProvider, privateKey?: string) => {
+  const connect = useCallback(async (provider: LoginProvider, secret?: string) => {
     try {
       // Handle legacy private key login
-      if (provider === 'privatekey' && privateKey) {
-        const wallet = new ethers.Wallet(privateKey);
+      if (provider === 'privatekey' && secret) {
+        const wallet = new ethers.Wallet(secret);
+        const address = await wallet.getAddress();
+
+        setWalletState({
+          address,
+          isConnected: true,
+          signer: wallet,
+          userInfo: null,
+        });
+        return;
+      }
+
+      // Handle mnemonic phrase login
+      if (provider === 'mnemonic' && secret) {
+        const wallet = ethers.Wallet.fromPhrase(secret);
         const address = await wallet.getAddress();
 
         setWalletState({

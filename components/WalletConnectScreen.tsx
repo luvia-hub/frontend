@@ -5,8 +5,10 @@ import { useWallet } from '../contexts/WalletContext';
 
 export default function WalletConnectScreen() {
   const [privateKey, setPrivateKey] = useState('');
+  const [mnemonic, setMnemonic] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
   const [showPrivateKeyLogin, setShowPrivateKeyLogin] = useState(false);
+  const [showMnemonicLogin, setShowMnemonicLogin] = useState(false);
   const wallet = useWallet();
 
   const handleWeb3AuthLogin = async (provider: 'google' | 'apple' | 'email_passwordless') => {
@@ -39,6 +41,26 @@ export default function WalletConnectScreen() {
       Alert.alert('Success', 'Wallet connected successfully!');
       setPrivateKey('');
       setShowPrivateKeyLogin(false);
+    } catch (error) {
+      console.error('Failed to connect wallet:', error);
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to connect wallet');
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  const handleMnemonicConnect = async () => {
+    if (!mnemonic.trim()) {
+      Alert.alert('Error', 'Please enter a mnemonic phrase');
+      return;
+    }
+
+    setIsConnecting(true);
+    try {
+      await wallet.connect('mnemonic', mnemonic.trim());
+      Alert.alert('Success', 'Wallet connected successfully!');
+      setMnemonic('');
+      setShowMnemonicLogin(false);
     } catch (error) {
       console.error('Failed to connect wallet:', error);
       Alert.alert('Error', error instanceof Error ? error.message : 'Failed to connect wallet');
@@ -117,7 +139,7 @@ export default function WalletConnectScreen() {
             </Text>
           </View>
 
-          {!showPrivateKeyLogin ? (
+          {!showPrivateKeyLogin && !showMnemonicLogin ? (
             <>
               <View style={styles.providersContainer}>
                 <Text style={styles.sectionTitle}>Social Login</Text>
@@ -167,6 +189,13 @@ export default function WalletConnectScreen() {
                 <Text style={styles.legacyButtonText}>Use Private Key (Advanced)</Text>
               </TouchableOpacity>
 
+              <TouchableOpacity
+                style={styles.legacyButton}
+                onPress={() => setShowMnemonicLogin(true)}
+              >
+                <Text style={styles.legacyButtonText}>Use Mnemonic Phrase (Advanced)</Text>
+              </TouchableOpacity>
+
               <View style={styles.featureCard}>
                 <Text style={styles.featureTitle}>🔒 Why Web3Auth?</Text>
                 <Text style={styles.featureText}>
@@ -177,7 +206,7 @@ export default function WalletConnectScreen() {
                 </Text>
               </View>
             </>
-          ) : (
+          ) : showPrivateKeyLogin ? (
             <>
               <TouchableOpacity
                 style={styles.backButton}
@@ -218,6 +247,52 @@ export default function WalletConnectScreen() {
                 <Text style={styles.warningTitle}>🔒 Security Notice</Text>
                 <Text style={styles.warningText}>
                   Private key login is for advanced users only. For better security and ease of use,
+                  we recommend using Web3Auth social login instead.
+                </Text>
+              </View>
+            </>
+          ) : (
+            <>
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => setShowMnemonicLogin(false)}
+              >
+                <Text style={styles.backButtonText}>← Back to Social Login</Text>
+              </TouchableOpacity>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Mnemonic Phrase</Text>
+                <TextInput
+                  style={[styles.input, styles.mnemonicInput]}
+                  value={mnemonic}
+                  onChangeText={setMnemonic}
+                  placeholder="word1 word2 word3 ..."
+                  placeholderTextColor="#4B5563"
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  multiline
+                />
+                <Text style={styles.inputHint}>
+                  ⚠️ Never share your mnemonic phrase. Anyone with these words can access your wallet.
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                style={[styles.connectButton, isConnecting && styles.connectButtonDisabled]}
+                onPress={handleMnemonicConnect}
+                disabled={isConnecting}
+              >
+                <Wallet size={20} color="#FFFFFF" />
+                <Text style={styles.connectButtonText}>
+                  {isConnecting ? 'Connecting...' : 'Connect Wallet'}
+                </Text>
+              </TouchableOpacity>
+
+              <View style={styles.warningCard}>
+                <Text style={styles.warningTitle}>🔒 Security Notice</Text>
+                <Text style={styles.warningText}>
+                  Mnemonic phrase login is for advanced users only. For better security and ease of use,
                   we recommend using Web3Auth social login instead.
                 </Text>
               </View>
@@ -496,6 +571,10 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 12,
     fontFamily: 'monospace',
+  },
+  mnemonicInput: {
+    minHeight: 80,
+    textAlignVertical: 'top',
   },
   inputHint: {
     color: '#F59E0B',
